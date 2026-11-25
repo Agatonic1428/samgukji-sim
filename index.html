@@ -142,6 +142,10 @@
         </div>
       </button>
       <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <a href="https://hits.sh/agatonic1428.github.io/samgukji-sim/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-2 py-1 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 transition" title="오늘 / 누적 방문자 수 (클릭 시 일별·월별 통계 보기)">
+          <img src="https://hits.sh/agatonic1428.github.io/samgukji-sim.svg?view=today-total&style=flat-square&label=%EB%B0%A9%EB%AC%B8%EC%9E%90&color=d97706&labelColor=1e293b" alt="방문자 수 (오늘/누적)" class="h-5 rounded" onerror="this.style.display='none';this.nextElementSibling.style.display='inline';" />
+          <span style="display:none" class="text-[11px] text-slate-400 px-1">방문자 집계(배포 시 활성화)</span>
+        </a>
         <button id="btnBattleRecordsBadge" class="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/45 text-xs font-semibold text-amber-200 flex items-center gap-1.5 transition" title="누적된 실제 전투 데이터 목록 보기">
           <i data-lucide="scroll" class="w-3.5 h-3.5 text-amber-300"></i>
           <span>누적 전투 데이터</span>
@@ -207,6 +211,7 @@
           <span id="homeLatestVersion" class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 font-semibold"></span>
         </div>
         <div id="homeUpdateList" class="space-y-3"></div>
+        <div id="homeUpdatePagination" class="flex flex-wrap items-center justify-center gap-1.5 pt-2"></div>
       </div>
 
       <!-- User Guide / How to Use -->
@@ -999,7 +1004,10 @@
       { id: "jeongui", name: "정의의 희생", type: "지휘", tag: "보조", rate: 100, level: 10, desc: "전투 시작 후 2턴 동안 전체 아군 연타 확률 +30%, 무력 최고 아군 2턴 정신 회복 획득, 자신은 2턴 무장 해제 획득." },
       { id: "dogwang", name: "도광양회", type: "패시브", tag: "책략", rate: 100, level: 10, desc: "고유 액티브 전법 발동률 +6%(지력 영향). 매 턴 시작 시 자신이 주는 책략 피해 +8%(중첩 가능, 전투 종료까지)." },
       { id: "maengryeol", name: "맹렬한 화염", type: "액티브", tag: "문무", rate: 50, level: 10, desc: "전체 적군에게 2턴 화공 부여 및 90% 책략 피해 + 90% 병기 피해를 준다." },
-      { id: "seonbong_sasu", name: "선봉의 사수", type: "액티브", tag: "방어", rate: 75, level: 10, desc: "1턴 동안 자신과 랜덤 우군 1명이 받는 피해 20%(선공 영향) 감소. 자신이 전열이면 추가로 자신 병력 회복(치유율 120%, 지력·선공 영향)." }
+      { id: "seonbong_sasu", name: "선봉의 사수", type: "액티브", tag: "방어", rate: 75, level: 10, desc: "1턴 동안 자신과 랜덤 우군 1명이 받는 피해 20%(선공 영향) 감소. 자신이 전열이면 추가로 자신 병력 회복(치유율 120%, 지력·선공 영향)." },
+      { id: "chok_uiji", name: "촉의 의지", type: "지휘", tag: "보조", rate: 100, level: 10, desc: "[촉 진영 3인 전용] 아군 전체가 고유 액티브 전법 발동 시 적군 전체에 2턴 위협 부여. 아군 전체가 적군에게 이상 상태 부여 시 주는 피해 +8%·액티브 발동률 +4%(최대 3중첩, 2턴)." },
+      { id: "wi_chuljeong", name: "위의 출정", type: "지휘", tag: "보조", rate: 100, level: 10, desc: "[위 진영 3인 전용] 아군 후열 랜덤 1명에게 채찍 부여: 첫 4턴 동안 적군 일반 공격마다 해당 적군의 주는 피해 증가 3% 탈취(중첩, 전투 종료까지). 4턴부터 주는 피해의 15%(지력 영향)만큼 병력 최저 아군 회복." },
+      { id: "o_bulgil", name: "오의 불길", type: "액티브", tag: "책략", rate: 65, level: 10, desc: "[오 진영 3인 전용] 적군 전체에 2턴 화공 부여(이미 화공 시 지력 -30 선공 영향, 2중첩·2턴). 지력 최고 아군이 랜덤 적군 2명에게 70% 책략 피해를 준다." }
     ];
 
     const INNATE_SKILL_NAMES = new Set([
@@ -1009,6 +1017,18 @@
       "백성과 함께", "완벽한 사격", "둔전령", "사생결의", "중원 토벌", "선봉 정신", "용맹의 화신", "초선차전", "강동 호거",
       "소신발언", "무쌍의 용사", "남다른 완력", "마비산", "국경의 장수", "청룡 출격"
     ]);
+    const INNATE_SKILL_OWNERS = {
+      "남방의 칼날": "축융부인", "남방 수호": "맹획", "성운 대열": "SP제갈량", "필사의 돌격": "방덕",
+      "침착한 지휘": "우금", "천하무략": "장흠", "백리의성": "서성", "전장 평정": "황충", "만인지적": "장비",
+      "매의 응시": "사마의", "검소한 소복": "변부인", "권력의 상징": "조비", "포위의 허점": "주준",
+      "신속 출병": "황보숭", "천자 참칭": "원술", "우천의 흑운": "좌자", "지략 방어": "전풍", "태평의 여운": "장녕",
+      "자오의 묘책": "위연", "불굴의 의지": "주태", "난세의 간웅": "조조", "화소연영": "육손",
+      "유인전": "왕이", "강렬": "하후돈", "폐월": "초선", "인재 등용": "순욱", "범의 포효": "관은병",
+      "화하 진압": "관우", "백성과 함께": "유비", "완벽한 사격": "태사자", "둔전령": "등애",
+      "사생결의": "고순", "중원 토벌": "강유", "선봉 정신": "악진", "용맹의 화신": "정욱",
+      "초선차전": "제갈량(일반)", "강동 호거": "손권", "소신발언": "장소", "무쌍의 용사": "여포",
+      "남다른 완력": "안량", "마비산": "화타", "국경의 장수": "공손찬", "청룡 출격": "관평"
+    };
     const FACTION_SKILL_NAMES = new Set([
       "군웅 격돌", "촉의 의지", "위의 출정", "위무 출정", "오의 불길"
     ]);
@@ -1046,7 +1066,88 @@
       { id: "byeongjeong", name: "<병정> 선본", isGoldBook: false, desc: "전투 시작 후 4턴 동안 받는 피해 6% 감소" },
       { id: "bonam", name: "금서 보남경서", isGoldBook: true, owner: "맹획", desc: "[맹획 고유 금서] 자신이 전열이면 받는 피해 5% 감소, 적군 전체의 최고 속성 3%(통솔 영향) 감소" },
       { id: "hapjeon", name: "<합전> 선본", isGoldBook: false, desc: "받는 병기 피해 5.5% 감소" },
-      { id: "paljin", name: "금서 팔진", isGoldBook: true, owner: "제갈량", desc: "[제갈량 고유 금서] 전체 아군이 초반 4턴 동안 주는 피해 3%(지력 영향) 증가, 이후 4턴 동안 받는 피해 3%(지력 영향) 감소" }
+      { id: "paljin", name: "금서 팔진", isGoldBook: true, owner: "제갈량", desc: "[제갈량 고유 금서] 전체 아군이 초반 4턴 동안 주는 피해 3%(지력 영향) 증가, 이후 4턴 동안 받는 피해 3%(지력 영향) 감소" },
+      { id: "wangdo_su", name: "<왕도> 수기", isGoldBook: false, desc: "주는 피해 4.2% 증가" },
+      { id: "hyeongi_jan", name: "<현기> 잔편", isGoldBook: false, desc: "자신이 후열이면 주는 피해 4% 증가" },
+      { id: "wongwan_jan", name: "<원관> 잔편", isGoldBook: false, desc: "회유 3.3% 증가" },
+      { id: "wongwan_su", name: "<원관> 수기", isGoldBook: false, desc: "회유 4.2% 증가" },
+      { id: "wongwan_seon", name: "<원관> 선본", isGoldBook: false, desc: "회유 5% 증가" },
+      { id: "byeongdo_jan", name: "<병도> 잔편", isGoldBook: false, desc: "홀수 턴에 병기 피해 6.6% 증가" },
+      { id: "byeongdo_seon", name: "<병도> 선본", isGoldBook: false, desc: "홀수 턴에 병기 피해 9.9% 증가" },
+      { id: "gunjaeng_seon", name: "<군쟁> 선본", isGoldBook: false, desc: "전열 목표에게 주는 피해 8% 증가" },
+      { id: "jeokmu_su", name: "<적무> 수기", isGoldBook: false, desc: "자신이 전열이면 주는 피해 4.6% 증가" },
+      { id: "pajeok_jan", name: "<파적> 잔편", isGoldBook: false, desc: "관통 4% 증가" },
+      { id: "pajeok_su", name: "<파적> 수기", isGoldBook: false, desc: "관통 5% 증가" },
+      { id: "bunchi_su", name: "<분치> 수기", isGoldBook: false, desc: "디버프 효과를 받은 후 1턴 동안 받는 피해 2.1% 감소 (최대 4중첩)" },
+      { id: "bunchi_seon", name: "<분치> 선본", isGoldBook: false, desc: "디버프 효과를 받은 후 1턴 동안 받는 피해 2.5% 감소 (최대 4중첩)" },
+      { id: "chase_jan", name: "<차세> 잔편", isGoldBook: false, desc: "홀수 턴에 관통 6% 증가" },
+      { id: "chase_seon", name: "<차세> 선본", isGoldBook: false, desc: "홀수 턴에 관통 9% 증가" },
+      { id: "jakjeon_jan", name: "<작전> 잔편", isGoldBook: false, desc: "병기 피해 4.3% 증가" },
+      { id: "jakjeon_su", name: "<작전> 수기", isGoldBook: false, desc: "병기 피해 5.4% 증가" },
+      { id: "seungjeon_su", name: "<승전> 수기", isGoldBook: false, desc: "전투 시작 후 4턴 동안 병기 피해 6.7% 증가" },
+      { id: "gangjeon_su", name: "<강전> 수기", isGoldBook: false, desc: "병력이 가장 높은 적군 목표에게 주는 피해 5.8% 증가" },
+      { id: "deukse_seon", name: "<득세> 선본", isGoldBook: false, desc: "피해를 준 후 관통 1.5% 증가 (최대 5중첩)" },
+      { id: "chase_su", name: "<차세> 수기", isGoldBook: false, desc: "홀수 턴에 관통 7.5% 증가" },
+      { id: "pajeok_seon", name: "<파적> 선본", isGoldBook: false, desc: "관통 6% 증가" },
+      { id: "jeokeum_su", name: "<적음> 수기", isGoldBook: false, desc: "전투 시작 후 3턴 동안 회심 확률 4.2% 증가" },
+      { id: "jeokeum_seon", name: "<적음> 선본", isGoldBook: false, desc: "전투 시작 후 3턴 동안 회심 확률 5% 증가" },
+      { id: "byeongjeong_su", name: "<병정> 수기", isGoldBook: false, desc: "전투 시작 후 4턴 동안 받는 피해 5% 감소" },
+      { id: "bunjeok_su", name: "<분적> 수기", isGoldBook: false, desc: "홀수 턴에 회심 확률 4.6% 증가" },
+      { id: "bunjeok_seon", name: "<분적> 선본", isGoldBook: false, desc: "홀수 턴에 회심 확률 5.5% 증가" },
+      { id: "jeokmu_seon", name: "<적무> 선본", isGoldBook: false, desc: "자신이 전열이면 주는 피해 5.5% 증가" },
+      { id: "seungjeon_seon", name: "<승전> 선본", isGoldBook: false, desc: "전투 시작 후 4턴 동안 병기 피해 8% 증가" },
+      { id: "jakjeon_seon", name: "<작전> 선본", isGoldBook: false, desc: "병기 피해 6.5% 증가" },
+      { id: "byeongdo_su", name: "<병도> 수기", isGoldBook: false, desc: "홀수 턴에 병기 피해 8.25% 증가" },
+      { id: "jeokbok_su", name: "<적복> 수기", isGoldBook: false, desc: "회심 확률 2.5% 증가" },
+      { id: "jeokbok_seon", name: "<적복> 선본", isGoldBook: false, desc: "회심 확률 3% 증가" },
+      { id: "gujeon_seon", name: "<구전> 선본", isGoldBook: false, desc: "병기 피해를 준 후 병기 피해 1.8% 증가 (최대 5중첩)" },
+      { id: "gongjeok_seon", name: "<공적> 선본", isGoldBook: false, desc: "회심 발동 후 60% 확률로 자신 무력 +5 (최대 4중첩)" },
+      { id: "wangdo_seon", name: "<왕도> 선본", isGoldBook: false, desc: "주는 피해 5% 증가" },
+      { id: "siri_su", name: "<시리> 수기", isGoldBook: false, desc: "디버프 상태를 보유한 목표에게 주는 피해 6.7% 증가" },
+      { id: "siri_seon", name: "<시리> 선본", isGoldBook: false, desc: "디버프 상태를 보유한 목표에게 주는 피해 8% 증가" },
+      { id: "hyeongi_su", name: "<현기> 수기", isGoldBook: false, desc: "자신이 후열이면 주는 피해 5% 증가" },
+      { id: "gunjaeng_su", name: "<군쟁> 수기", isGoldBook: false, desc: "전열 목표에게 주는 피해 6.7% 증가" },
+      { id: "hoik_su", name: "<호익> 수기", isGoldBook: false, desc: "매 턴 처음 주는 피해는 66.7% 확률로 피신 무시" },
+      { id: "hoik_seon", name: "<호익> 선본", isGoldBook: false, desc: "매 턴 처음 주는 피해는 80% 확률로 피신 무시" },
+      { id: "bulyang_su", name: "<불양> 수기", isGoldBook: false, desc: "이성에게 주는 피해 5.8% 증가" },
+      { id: "bulyang_seon", name: "<불양> 선본", isGoldBook: false, desc: "이성에게 주는 피해 7% 증가" },
+      { id: "gangjeon_seon", name: "<강전> 선본", isGoldBook: false, desc: "병력이 가장 높은 적군 목표에게 주는 피해 7% 증가" },
+      { id: "soko_su", name: "<속오> 수기", isGoldBook: false, desc: "통솔이 자신보다 낮은 목표에게 주는 피해 4.6% 증가" },
+      { id: "soko_seon", name: "<속오> 선본", isGoldBook: false, desc: "통솔이 자신보다 낮은 목표에게 주는 피해 5.5% 증가" },
+      { id: "piheom_su", name: "<피험> 수기", isGoldBook: false, desc: "받는 피해 3.8% 감소" },
+      { id: "piheom_seon", name: "<피험> 선본", isGoldBook: false, desc: "받는 피해 4.5% 감소" },
+      { id: "suse_su", name: "<수세> 수기", isGoldBook: false, desc: "자신이 후열이면 받는 피해 4.2% 감소" },
+      { id: "suse_seon", name: "<수세> 선본", isGoldBook: false, desc: "자신이 후열이면 받는 피해 5% 감소" },
+      { id: "suto_seon", name: "<수토> 선본", isGoldBook: false, desc: "자신이 전열이면 받는 피해 5% 감소" },
+      { id: "gogun_seon", name: "<고군> 선본", isGoldBook: false, desc: "홀수 턴에 회유 8% 증가" },
+      { id: "bunhap_seon", name: "<분합> 선본", isGoldBook: false, desc: "반격률 8% 증가" },
+      { id: "gujeon_su", name: "<구전> 수기", isGoldBook: false, desc: "병기 피해를 준 후 병기 피해 1.5% 증가 (최대 5중첩)" },
+      { id: "gongjeok_su", name: "<공적> 수기", isGoldBook: false, desc: "회심 발동 후 60% 확률로 자신 무력 +4.2 (최대 4중첩)" },
+      { id: "deukse_su", name: "<득세> 수기", isGoldBook: false, desc: "피해를 준 후 관통 1.2% 증가 (최대 5중첩)" },
+      { id: "suto_su", name: "<수토> 수기", isGoldBook: false, desc: "자신이 전열이면 받는 피해 4.2% 감소" },
+      { id: "suto_jan", name: "<수토> 잔편", isGoldBook: false, desc: "자신이 전열이면 받는 피해 3.3% 감소" },
+      { id: "gogun_su", name: "<고군> 수기", isGoldBook: false, desc: "홀수 턴에 회유 6.7% 증가" },
+      { id: "gogun_jan", name: "<고군> 잔편", isGoldBook: false, desc: "홀수 턴에 회유 5.3% 증가" },
+      { id: "bunhap_su", name: "<분합> 수기", isGoldBook: false, desc: "반격률 6.72% 증가" },
+      { id: "bunhap_jan", name: "<분합> 잔편", isGoldBook: false, desc: "반격률 5.28% 증가" },
+      { id: "seungjeon_jan", name: "<승전> 잔편", isGoldBook: false, desc: "전투 시작 후 4턴 동안 병기 피해 5.3% 증가" },
+      { id: "gujeon_jan", name: "<구전> 잔편", isGoldBook: false, desc: "병기 피해를 준 후 병기 피해 1.2% 증가 (최대 5중첩)" },
+      { id: "jeokbok_jan", name: "<적복> 잔편", isGoldBook: false, desc: "회심 확률 2% 증가" },
+      { id: "bunjeok_jan", name: "<분적> 잔편", isGoldBook: false, desc: "홀수 턴에 회심 확률 3.6% 증가" },
+      { id: "jeokeum_jan", name: "<적음> 잔편", isGoldBook: false, desc: "전투 시작 후 3턴 동안 회심 확률 3.3% 증가" },
+      { id: "gongjeok_jan", name: "<공적> 잔편", isGoldBook: false, desc: "회심 발동 후 60% 확률로 자신 무력 +3.3 (최대 4중첩)" },
+      { id: "deukse_jan", name: "<득세> 잔편", isGoldBook: false, desc: "피해를 준 후 관통 1% 증가 (최대 5중첩)" },
+      { id: "siri_jan", name: "<시리> 잔편", isGoldBook: false, desc: "디버프 상태를 보유한 목표에게 주는 피해 5.3% 증가" },
+      { id: "gunjaeng_jan", name: "<군쟁> 잔편", isGoldBook: false, desc: "전열 목표에게 주는 피해 5.3% 증가" },
+      { id: "hoik_jan", name: "<호익> 잔편", isGoldBook: false, desc: "매 턴 처음 주는 피해는 53.3% 확률로 피신 무시" },
+      { id: "bulyang_jan", name: "<불양> 잔편", isGoldBook: false, desc: "이성에게 주는 피해 4.7% 증가" },
+      { id: "gangjeon_jan", name: "<강전> 잔편", isGoldBook: false, desc: "병력이 가장 높은 적군 목표에게 주는 피해 4.7% 증가" },
+      { id: "jeokmu_jan", name: "<적무> 잔편", isGoldBook: false, desc: "자신이 전열이면 주는 피해 3.7% 증가" },
+      { id: "soko_jan", name: "<속오> 잔편", isGoldBook: false, desc: "통솔이 자신보다 낮은 목표에게 주는 피해 3.7% 증가" },
+      { id: "piheom_jan", name: "<피험> 잔편", isGoldBook: false, desc: "받는 피해 3% 감소" },
+      { id: "byeongjeong_jan", name: "<병정> 잔편", isGoldBook: false, desc: "전투 시작 후 4턴 동안 받는 피해 4% 감소" },
+      { id: "suse_jan", name: "<수세> 잔편", isGoldBook: false, desc: "자신이 후열이면 받는 피해 3.3% 감소" },
+      { id: "bunchi_jan", name: "<분치> 잔편", isGoldBook: false, desc: "디버프 효과를 받은 후 1턴 동안 받는 피해 1.7% 감소 (최대 4중첩)" }
     ];
 
     const EQUIPS = [
@@ -1732,13 +1833,82 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v20";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v26";
 
     const UPDATE_LOGS = [
       {
-        version: "v1.13",
+        version: "v1.20",
         date: "2026.11.25",
         badge: "최신",
+        title: "병법 잔편·수기·선본 전 등급 24종 추가 완료 (총 89종)",
+        items: [
+          "수토, 고군, 분합, 승전, 구전, 적복, 분적, 적음, 공적, 득세, 시리, 군쟁, 호익, 불양, 강전, 적무, 속오, 피험, 병정, 수세, 분치의 잔편·수기 등급 24종 추가",
+          "총 89종 병법(금서 3종 + 일반 잔편·수기·선본 86종) 전투 시뮬레이션 전 등급 반영 완료"
+        ]
+      },
+      {
+        version: "v1.19",
+        date: "2026.11.25",
+        badge: "병법",
+        title: "신규 병법 22종 대거 추가 (총 65종 병법 시뮬레이션 지원)",
+        items: [
+          "시리, 수토, 수세, 속오, 피험, 호익(피신 무시), 불양(이성 피해↑), 고군(홀수 턴 회유), 분합(반격률) 및 왕도·강전·현기·군쟁·구전·공적·득세 등급별 22종 추가",
+          "총 65종 병법 효과(잔편·수기·선본·금서) 전투 엔진 완전 반영"
+        ]
+      },
+      {
+        version: "v1.18",
+        date: "2026.11.25",
+        badge: "병법",
+        title: "신규 병법 15종 추가 및 회심·연속중첩 병법 구현 (총 43종)",
+        items: [
+          "적음(수기·선본), 분적(수기·선본), 적복(수기·선본), 구전(선본), 공적(선본), 병정(수기), 차세(수기), 파적(선본), 적무(선본), 승전(선본), 작전(선본), 병도(수기) 등 15종 추가",
+          "총 43종 병법(금서 3종 + 일반 잔편·수기·선본 40종) 전투 시뮬레이션 반영 완료"
+        ]
+      },
+      {
+        version: "v1.17",
+        date: "2026.11.25",
+        badge: "병법",
+        title: "신규 병법 20종(잔편·수기·선본) 추가 및 전투 엔진 반영",
+        items: [
+          "원관, 병도, 왕도(수기), 현기(잔편), 군쟁, 적무, 파적, 분치, 차세, 작전, 승전, 강전, 득세 병법 20종 등록 및 전투 로직 구현 (총 28종)",
+          "홀수 턴 관통/병기 피해, 전열/후열 조건, 최고 병력 목표, 디버프 피감 중첩 등 병법 효과 시뮬레이션 반영"
+        ]
+      },
+      {
+        version: "v1.16",
+        date: "2026.11.25",
+        badge: "통계",
+        title: "실시간 오늘·누적 방문자 수 카운터 추가",
+        items: [
+          "상단 헤더에 오늘/누적 방문자 수 배지 추가 (클릭 시 일별·주별·월별 방문 통계 대시보드 확인 가능)"
+        ]
+      },
+      {
+        version: "v1.15",
+        date: "2026.11.25",
+        badge: "진영 전법",
+        title: "4대 진영 전법 완비 — 촉의 의지·위의 출정·오의 불길 추가 (총 81종)",
+        items: [
+          "촉의 의지(촉 3인), 위의 출정(위 3인), 오의 불길(오 3인) 전투 로직 구현으로 군웅 격돌 포함 4대 진영 전법 완성",
+          "총 81종 전법 시뮬레이션 지원 및 진영 조건(동일 진영 3인) 자동 판정 반영"
+        ]
+      },
+      {
+        version: "v1.14",
+        date: "2026.11.25",
+        badge: "UI 개선",
+        title: "보유 전법에서 고유 전법 제외 & 필요 데이터에 고유 전법 전용 목록 신설",
+        items: [
+          "보유 전법 선택 탭에서 장수 고유 전법을 제외해 학습·장착 가능한 전법(진영·영본/반·일반)만 깔끔하게 선택하도록 개선",
+          "상단 '필요 데이터' 모달에 미등록 장수 고유 전법을 장수명과 함께(예: 자오의 묘책(위연)) 별도 항목으로 분리 표시"
+        ]
+      },
+      {
+        version: "v1.13",
+        date: "2026.11.25",
+        badge: "검색·수정",
         title: "티어표·공존덱 장수 실시간 검색 추가 & 전법명 오타 수정",
         items: [
           "티어표 및 공존덱 세트 탭에 장수·덱·전법 실시간 검색창 추가 (공백으로 여러 장수 동시 검색 가능)",
@@ -1937,12 +2107,13 @@
       myTroops: JSON.parse(JSON.stringify(INITIAL_MY_TROOPS)),
       tierDecks: JSON.parse(JSON.stringify(INITIAL_TIER_DECKS)),
       ownedGenerals: [...INITIAL_OWNED_GENERALS],
-      ownedSkills: [...INITIAL_OWNED_SKILLS],
+      ownedSkills: INITIAL_OWNED_SKILLS.filter(n => getSkillCategory(n) !== "innate"),
       activeTroopsSubTab: "myTroops",
       tierStageFilter: "all",
       tierBtFilter: "all",
       tierSearchQuery: "",
       coexSearchQuery: "",
+      homeUpdatePage: 1,
       maxLevelMode: false,
       maxLevel: 50,
       activeTab: "home",
@@ -1991,7 +2162,7 @@
         if (Array.isArray(parsed.myTroops) && parsed.myTroops.length) state.myTroops = parsed.myTroops;
         if (Array.isArray(parsed.tierDecks) && parsed.tierDecks.length) state.tierDecks = parsed.tierDecks;
         if (Array.isArray(parsed.ownedGenerals)) state.ownedGenerals = parsed.ownedGenerals;
-        if (Array.isArray(parsed.ownedSkills)) state.ownedSkills = parsed.ownedSkills;
+        if (Array.isArray(parsed.ownedSkills)) state.ownedSkills = parsed.ownedSkills.filter(n => getSkillCategory(n) !== "innate");
       } catch (e) {}
     }
 
@@ -2182,6 +2353,17 @@
           dajimAlly: false,
           mentalRecoveryTurns: 0,
           dogwangStratInc: 0,
+          chokUijiActive: false,
+          chaejjikActive: false,
+          chaejjikStolen: 0,
+          deukseStacks: 0,
+          gujeonStacks: 0,
+          gongjeokStacks: 0,
+          gongjeokForce: 0,
+          deuksePen: 0,
+          gujeonPhysInc: 0,
+          firstDmgDoneThisTurn: false,
+          counterRate: 0,
           dmgInc: 0,
           physDmgInc: 0,
           stratDmgInc: 0,
@@ -2271,7 +2453,7 @@
         return added;
       };
       const teamGunryeongCmd = (u) => alive(getTeam(u.side)).reduce((s, a) => s + (a.gunryeongStacks || 0) * 25.75, 0);
-      const effForce = (u) => Math.max(10, u.stats.force + u.baekjeonForce + u.gyeolsaForce + u.yeonjeonForceStacks * 16 + u.cheonhaStacks * 20 + (u.stats.force >= u.stats.intel ? u.simyeonStacks * 4 : 0) - u.debuffs.statDownForce - u.debuffs.gunjaForce + u.tempBuffs.reduce((s, b) => s + (b.forceAdd || 0), 0));
+      const effForce = (u) => Math.max(10, u.stats.force + u.baekjeonForce + u.gyeolsaForce + (u.gongjeokForce || 0) + u.yeonjeonForceStacks * 16 + u.cheonhaStacks * 20 + (u.stats.force >= u.stats.intel ? u.simyeonStacks * 4 : 0) - u.debuffs.statDownForce - u.debuffs.gunjaForce + u.tempBuffs.reduce((s, b) => s + (b.forceAdd || 0), 0));
       const effIntel = (u) => Math.max(10, u.stats.intel + u.baekjeonIntel + u.yeonjeonIntelStacks * 16 + u.cheonhaStacks * 20 + (u.stats.intel > u.stats.force ? u.simyeonStacks * 4 : 0) + u.stolenIntel - u.debuffs.statDownIntel - u.debuffs.gunjaIntel - (u.debuffs.burn > 0 ? 15 : 0) + u.tempBuffs.reduce((s, b) => s + (b.intelAdd || 0), 0));
       const effCmd = (u) => Math.max(10, u.stats.command + u.baekjeonCmd + u.cheonjaCmdBonus + teamGunryeongCmd(u) - u.debuffs.statDownCmd - (u.debuffs.powiTurns > 0 ? u.debuffs.powiCmdDown : 0) - (u.debuffs.flood > 0 ? 20 : 0) + u.tempBuffs.reduce((s, b) => s + (b.cmdAdd || 0), 0));
       const hasStatDown = (u) => u.debuffs.permanentStatDown || u.debuffs.statDownTurns > 0 || u.debuffs.flood > 0 || u.debuffs.burn > 0 || u.debuffs.powiTurns > 0;
@@ -2364,7 +2546,38 @@
               addLog(0, side, `${nameTag(u)} <span class="text-orange-400 font-bold">【${stObj.name}】</span> 고유 병법 발동`);
             }
             if (st === "wangdo") u.dmgInc += 3.3;
+            if (st === "wangdo_su") u.dmgInc += 4.2;
+            if (st === "wangdo_seon") u.dmgInc += 5;
             if (st === "hyeongi" && u.row === "back") u.dmgInc += 6;
+            if (st === "hyeongi_su" && u.row === "back") u.dmgInc += 5;
+            if (st === "hyeongi_jan" && u.row === "back") u.dmgInc += 4;
+            if (st === "piheom_su") addDmgRed(u, 3.8);
+            if (st === "piheom_seon") addDmgRed(u, 4.5);
+            if (st === "suse_su" && u.row === "back") addDmgRed(u, 4.2);
+            if (st === "suse_seon" && u.row === "back") addDmgRed(u, 5);
+            if (st === "suto_seon" && u.row === "front") addDmgRed(u, 5);
+            if (st === "bunhap_seon") u.counterRate += 8;
+            if (st === "bunhap_su") u.counterRate += 6.72;
+            if (st === "bunhap_jan") u.counterRate += 5.28;
+            if (st === "suto_su" && u.row === "front") addDmgRed(u, 4.2);
+            if (st === "suto_jan" && u.row === "front") addDmgRed(u, 3.3);
+            if (st === "suse_jan" && u.row === "back") addDmgRed(u, 3.3);
+            if (st === "piheom_jan") addDmgRed(u, 3);
+            if (st === "jeokmu_jan" && u.row === "front") u.dmgInc += 3.7;
+            if (st === "jeokbok_jan") u.critRate += 2;
+            if (st === "wongwan_jan") u.lifesteal += 3.3;
+            if (st === "wongwan_su") u.lifesteal += 4.2;
+            if (st === "wongwan_seon") u.lifesteal += 5;
+            if (st === "jeokmu_su" && u.row === "front") u.dmgInc += 4.6;
+            if (st === "jeokmu_seon" && u.row === "front") u.dmgInc += 5.5;
+            if (st === "pajeok_jan") u.penetration += 4;
+            if (st === "pajeok_su") u.penetration += 5;
+            if (st === "pajeok_seon") u.penetration += 6;
+            if (st === "jakjeon_jan") u.physDmgInc += 4.3;
+            if (st === "jakjeon_su") u.physDmgInc += 5.4;
+            if (st === "jakjeon_seon") u.physDmgInc += 6.5;
+            if (st === "jeokbok_su") u.critRate += 2.5;
+            if (st === "jeokbok_seon") u.critRate += 3;
             if (st === "hapjeon") addDmgRed(u, 5.5, "physDmgRed");
             if (st === "bonam" && u.row === "front") {
               addDmgRed(u, 5);
@@ -2530,6 +2743,27 @@
             u.debuffs.disarm = Math.max(u.debuffs.disarm, 2);
             addLog(0, side, `${nameTag(u)} 전법 [정의의 희생] 발동 (2턴 전체 아군 연타 +30%, ${topF ? topF.name : ""} 정신 회복, 자신 무장 해제)`);
           }
+          if (u.skills.includes("chok_uiji")) {
+            const allShu = units.length === 3 && units.every(a => a.faction === "촉");
+            if (allShu) {
+              units.forEach(a => { a.chokUijiActive = true; });
+              addLog(0, side, `${nameTag(u)} 진영 전법 [촉의 의지] 발동! (촉 진영 3인 충족 — 고유 액티브 시 전체 위협, 이상 상태 부여 시 피해+8%·발동률+4%)`);
+            } else {
+              addLog(0, side, `${nameTag(u)} 진영 전법 [촉의 의지] 미발동 (아군 3인 모두 촉 진영 필요)`);
+            }
+          }
+          if (u.skills.includes("wi_chuljeong")) {
+            const allWei = units.length === 3 && units.every(a => a.faction === "위");
+            if (allWei) {
+              const backs = units.filter(a => a.row === "back");
+              const pool = backs.length ? backs : units;
+              const target = pool[Math.floor(Math.random() * pool.length)];
+              if (target) target.chaejjikActive = true;
+              addLog(0, side, `${nameTag(u)} 진영 전법 [위의 출정] 발동! (위 진영 3인 충족 → ${target ? target.name : ""}에게 채찍 부여)`);
+            } else {
+              addLog(0, side, `${nameTag(u)} 진영 전법 [위의 출정] 미발동 (아군 3인 모두 위 진영 필요)`);
+            }
+          }
         });
       });
 
@@ -2594,7 +2828,16 @@
         });
       }
 
+      function triggerChokUijiDebuff(u) {
+        if (!u || u.troops <= 0 || !u.chokUijiActive) return;
+        alive(getTeam(u.side)).forEach(a => {
+          const cur = a.tempBuffs.filter(b => b.name === "촉의 의지").length;
+          if (cur < 3) a.tempBuffs.push({ name: "촉의 의지", turns: 2, dmgInc: 8, activeRateInc: 4 });
+        });
+      }
+
       function triggerSegeum(u) {
+        triggerChokUijiDebuff(u);
         if (!u || u.troops <= 0 || !u.skills.includes("segeum") || u.segeumCountThisTurn >= 10) return;
         u.segeumCountThisTurn++;
         const healAmt = Math.sqrt(u.troops) * 0.40 * ((effIntel(u) + effCmd(u)) / 240) * 1.15;
@@ -2648,7 +2891,11 @@
         if (attacker.troops <= 0 || target.troops <= 0) return 0;
 
         // Evade check (normal attack only)
-        if (opts.isNormal && target.evadeRate > 0 && Math.random() * 100 < target.evadeRate) {
+        const hoikIgnore = !attacker.firstDmgDoneThisTurn && (
+          (attacker.strategies.includes("hoik_seon") && Math.random() < 0.80) ||
+          (attacker.strategies.includes("hoik_su") && Math.random() < 0.667) || (attacker.strategies.includes("hoik_jan") && Math.random() < 0.533)
+        );
+        if (opts.isNormal && !hoikIgnore && target.evadeRate > 0 && Math.random() * 100 < target.evadeRate) {
           target.evadeCountThisTurn++;
           addLog(currentTurn, attacker.side, `${nameTag(target)} 피신 발동! ${nameTag(attacker)}의 일반 공격 회피`);
           return 0;
@@ -2656,7 +2903,13 @@
 
         const atkStat = opts.type === "phys" ? effForce(attacker) : effIntel(attacker);
         const defStat = opts.type === "phys" ? effCmd(target) : effIntel(target);
-        const pen = (opts.type === "phys" ? attacker.penetration : attacker.stratPenetration) + attacker.tempBuffs.reduce((s, b) => s + (b.penetration || 0), 0);
+        let oddPen = 0;
+        if (currentTurn % 2 === 1) {
+          if (attacker.strategies.includes("chase_jan")) oddPen += 6;
+          if (attacker.strategies.includes("chase_su")) oddPen += 7.5;
+          if (attacker.strategies.includes("chase_seon")) oddPen += 9;
+        }
+        const pen = (opts.type === "phys" ? (attacker.penetration + oddPen + (attacker.deuksePen || 0)) : attacker.stratPenetration) + attacker.tempBuffs.reduce((s, b) => s + (b.penetration || 0), 0);
         const effDef = defStat * (1 - Math.min(0.5, pen / 100));
 
         // Base damage scaled by sqrt(troops) * coef * stat ratio
@@ -2674,7 +2927,7 @@
 
         // Attacker damage increase
         let dmgInc = attacker.dmgInc + (opts.extraDmgInc || 0) + attacker.tempBuffs.reduce((s, b) => s + (b.dmgInc || 0), 0);
-        dmgInc += (attacker.sincheDmgStacks || 0) * 10.6 + (attacker.oksaeDmgInc || 0) + (attacker.gyeokdolDmgStacks || 0) * 5 + (attacker.junbiDmgInc || 0);
+        dmgInc += (attacker.sincheDmgStacks || 0) * 10.6 + (attacker.oksaeDmgInc || 0) + (attacker.gyeokdolDmgStacks || 0) * 5 + (attacker.junbiDmgInc || 0) + (attacker.chaejjikStolen || 0);
         if (opts.type === "phys") {
           dmgInc += attacker.tempBuffs.reduce((s, b) => s + (b.physDmgInc || 0), 0);
           if (attacker.debuffs.giseonTurns > 0) dmgInc -= attacker.debuffs.giseonPhysDec;
@@ -2693,6 +2946,41 @@
 
         // <화예의 칼날> +6% vs statDown target
         if (attacker.strategies.includes("hwaye") && hasStatDown(target)) dmgInc += 6;
+        if (attacker.strategies.includes("gunjaeng_jan") && target.row === "front") dmgInc += 5.3;
+        if (attacker.strategies.includes("gunjaeng_su") && target.row === "front") dmgInc += 6.7;
+        if (attacker.strategies.includes("gunjaeng_seon") && target.row === "front") dmgInc += 8;
+        if (hasAnyDebuff(target)) {
+          if (attacker.strategies.includes("siri_jan")) dmgInc += 5.3;
+          if (attacker.strategies.includes("siri_su")) dmgInc += 6.7;
+          if (attacker.strategies.includes("siri_seon")) dmgInc += 8;
+        }
+        if (attacker.isFemale !== target.isFemale) {
+          if (attacker.strategies.includes("bulyang_jan")) dmgInc += 4.7;
+          if (attacker.strategies.includes("bulyang_su")) dmgInc += 5.8;
+          if (attacker.strategies.includes("bulyang_seon")) dmgInc += 7;
+        }
+        if (effCmd(target) < effCmd(attacker)) {
+          if (attacker.strategies.includes("soko_jan")) dmgInc += 3.7;
+          if (attacker.strategies.includes("soko_su")) dmgInc += 4.6;
+          if (attacker.strategies.includes("soko_seon")) dmgInc += 5.5;
+        }
+        if (attacker.strategies.includes("gangjeon_jan") || attacker.strategies.includes("gangjeon_su") || attacker.strategies.includes("gangjeon_seon")) {
+          const topHpE = [...alive(getEnemies(attacker.side))].sort((a, b) => b.troops - a.troops)[0];
+          if (topHpE && topHpE.uid === target.uid) {
+            if (attacker.strategies.includes("gangjeon_jan")) dmgInc += 4.7;
+            if (attacker.strategies.includes("gangjeon_su")) dmgInc += 5.8;
+            if (attacker.strategies.includes("gangjeon_seon")) dmgInc += 7;
+          }
+        }
+        if (opts.type === "phys") {
+          dmgInc += (attacker.gujeonPhysInc || 0);
+          if (currentTurn % 2 === 1 && attacker.strategies.includes("byeongdo_jan")) dmgInc += 6.6;
+          if (currentTurn % 2 === 1 && attacker.strategies.includes("byeongdo_su")) dmgInc += 8.25;
+          if (currentTurn % 2 === 1 && attacker.strategies.includes("byeongdo_seon")) dmgInc += 9.9;
+          if (currentTurn <= 4 && attacker.strategies.includes("seungjeon_jan")) dmgInc += 5.3;
+          if (currentTurn <= 4 && attacker.strategies.includes("seungjeon_su")) dmgInc += 6.7;
+          if (currentTurn <= 4 && attacker.strategies.includes("seungjeon_seon")) dmgInc += 8;
+        }
         // <팔진> turns 1-4 dmgInc
         const paljinAlly = getTeam(attacker.side).find(u => u.strategies.includes("paljin"));
         if (paljinAlly && currentTurn <= 4) dmgInc += 3 + effIntel(paljinAlly) * 0.005;
@@ -2704,6 +2992,14 @@
         let remainMult = 1 - target.dmgRed / 100;
         target.tempBuffs.forEach(b => { if (b.dmgRed) remainMult *= (1 - b.dmgRed / 100); });
         if (target.strategies.includes("byeongjeong") && currentTurn <= 4) remainMult *= 0.94;
+        if (target.strategies.includes("byeongjeong_su") && currentTurn <= 4) remainMult *= 0.95;
+        if (target.strategies.includes("byeongjeong_jan") && currentTurn <= 4) remainMult *= 0.96;
+        if (hasAnyDebuff(target)) {
+          const debCnt = Math.min(4, [target.debuffs.disarm, target.debuffs.fear, target.debuffs.silence, target.debuffs.threat, target.debuffs.flood, target.debuffs.burn, target.debuffs.sorcery, target.debuffs.starve, target.debuffs.statDownTurns].filter(v => v > 0).length || 1);
+          if (target.strategies.includes("bunchi_jan")) remainMult *= Math.pow(1 - 0.017, debCnt);
+          if (target.strategies.includes("bunchi_su")) remainMult *= Math.pow(1 - 0.021, debCnt);
+          if (target.strategies.includes("bunchi_seon")) remainMult *= Math.pow(1 - 0.025, debCnt);
+        }
         const paljinDef = getTeam(target.side).find(u => u.strategies.includes("paljin"));
         if (paljinDef && currentTurn >= 5) remainMult *= (1 - (3 + effIntel(paljinDef) * 0.005) / 100);
         if (target.skills.includes("ucheon")) {
@@ -2794,6 +3090,14 @@
         // Crit check (남방의 칼날 40% 회심 vs 속성감소 + 기본 critRate)
         let isCrit = false;
         let critChance = attacker.critRate + (opts.type === "strat" ? attacker.stratCritRate : 0) + (opts.extraCritRate || 0) + attacker.tempBuffs.reduce((s, b) => s + (b.critRate || 0), 0);
+        if (opts.type === "phys") {
+          if (currentTurn <= 3 && attacker.strategies.includes("jeokeum_jan")) critChance += 3.3;
+          if (currentTurn <= 3 && attacker.strategies.includes("jeokeum_su")) critChance += 4.2;
+          if (currentTurn <= 3 && attacker.strategies.includes("jeokeum_seon")) critChance += 5;
+          if (currentTurn % 2 === 1 && attacker.strategies.includes("bunjeok_jan")) critChance += 3.6;
+          if (currentTurn % 2 === 1 && attacker.strategies.includes("bunjeok_su")) critChance += 4.6;
+          if (currentTurn % 2 === 1 && attacker.strategies.includes("bunjeok_seon")) critChance += 5.5;
+        }
         const nambangBladeActive = opts.type === "phys" && attacker.skills.includes("nambang_blade") && hasStatDown(target);
         if (nambangBladeActive) critChance += 40;
         if (Math.random() * 100 < critChance) {
@@ -2820,6 +3124,28 @@
           addLog(currentTurn, attacker.side, `${nameTag(target)}의 병력이 <span class="text-rose-500 font-bold">0</span>이 되어 전투 불능!`, "ko");
         }
 
+        // <득세> 선본: 피해를 준 후 관통 +1.5% (최대 5중첩)
+        attacker.firstDmgDoneThisTurn = true;
+        if (attacker.deukseStacks < 5) {
+          if (attacker.strategies.includes("deukse_seon")) { attacker.deukseStacks++; attacker.deuksePen += 1.5; }
+          else if (attacker.strategies.includes("deukse_su")) { attacker.deukseStacks++; attacker.deuksePen += 1.2; }
+          else if (attacker.strategies.includes("deukse_jan")) { attacker.deukseStacks++; attacker.deuksePen += 1.0; }
+        }
+        if (opts.type === "phys" && attacker.gujeonStacks < 5) {
+          if (attacker.strategies.includes("gujeon_seon")) { attacker.gujeonStacks++; attacker.gujeonPhysInc += 1.8; }
+          else if (attacker.strategies.includes("gujeon_su")) { attacker.gujeonStacks++; attacker.gujeonPhysInc += 1.5; }
+          else if (attacker.strategies.includes("gujeon_jan")) { attacker.gujeonStacks++; attacker.gujeonPhysInc += 1.2; }
+        }
+        if (isCrit && attacker.gongjeokStacks < 4 && Math.random() < 0.60) {
+          if (attacker.strategies.includes("gongjeok_seon")) { attacker.gongjeokStacks++; attacker.gongjeokForce += 5; }
+          else if (attacker.strategies.includes("gongjeok_su")) { attacker.gongjeokStacks++; attacker.gongjeokForce += 4.2; }
+          else if (attacker.strategies.includes("gongjeok_jan")) { attacker.gongjeokStacks++; attacker.gongjeokForce += 3.3; }
+        }
+        if (opts.isNormal && !opts.isCounter && target.troops > 0 && target.counterRate > 0 && Math.random() * 100 < target.counterRate) {
+          addLog(currentTurn, target.side, `${nameTag(target)} 【분합】 반격 발동 → ${nameTag(attacker)}`);
+          dealDamage(target, attacker, { type: "phys", coef: 100, isNormal: true, isCounter: true, source: "반격" });
+        }
+
         // 연전연승 stack
         if (attacker.skills.includes("yeonjeon")) {
           if (opts.type === "phys" && attacker.yeonjeonForceStacks < 8) attacker.yeonjeonForceStacks++;
@@ -2827,12 +3153,28 @@
         }
 
         // 회유 (병기 흡혈) & 심리 공격 (책략 흡혈)
-        const totalLifesteal = attacker.lifesteal + attacker.tempBuffs.reduce((s, b) => s + (b.lifesteal || 0), 0);
+        const totalLifesteal = attacker.lifesteal + ((currentTurn % 2 === 1) ? ((attacker.strategies.includes("gogun_seon") ? 8 : 0) + (attacker.strategies.includes("gogun_su") ? 6.7 : 0) + (attacker.strategies.includes("gogun_jan") ? 5.3 : 0)) : 0) + attacker.tempBuffs.reduce((s, b) => s + (b.lifesteal || 0), 0);
         if (opts.type === "phys" && totalLifesteal > 0 && attacker.troops > 0) {
           applyHeal(attacker, attacker, finalDmg * (totalLifesteal / 100), "회유", true);
         }
         if (opts.type === "strat" && attacker.stratLifesteal > 0 && attacker.troops > 0) {
           applyHeal(attacker, attacker, finalDmg * (attacker.stratLifesteal / 100), "심리 공격", true);
+        }
+        // 위의 출정 - 채찍 (1~4턴 적 일반 공격 시 피해 증가 3% 탈취 / 4턴부터 채찍 보유자 피해 시 최저 병력 아군 15% 회복)
+        if (opts.isNormal && currentTurn <= 4) {
+          const chaejjikUnit = alive(getTeam(target.side)).find(a => a.chaejjikActive);
+          if (chaejjikUnit) {
+            attacker.chaejjikStolen -= 3;
+            chaejjikUnit.chaejjikStolen += 3;
+            addLog(currentTurn, target.side, `${nameTag(chaejjikUnit)} 【위의 출정-채찍】 → ${nameTag(attacker)} 주는 피해 증가 3% 탈취!`);
+          }
+        }
+        if (currentTurn >= 4 && attacker.chaejjikActive && finalDmg > 0) {
+          const lowAlly = alive(getTeam(attacker.side)).sort((a, b) => a.troops - b.troops)[0];
+          if (lowAlly) {
+            const healAmt = finalDmg * 0.15 * (1 + effIntel(attacker) / 600);
+            applyHeal(attacker, lowAlly, healAmt, "위의 출정-채찍", false);
+          }
         }
 
         // 남방의 칼날 치유 (병기 피해 시 목표가 속성감소 보유 & 회심 발동 시 피해의 25%*무력영향)
@@ -3077,7 +3419,7 @@
         jiryakTriggeredThisTurn.clear();
         Object.keys(eumyangCountThisTurn).forEach(k => delete eumyangCountThisTurn[k]);
         Object.keys(taepyeongCountThisTurn).forEach(k => delete taepyeongCountThisTurn[k]);
-        allUnits.forEach(u => { u.gyeokdolHealCountThisTurn = 0; u.evadeCountThisTurn = 0; u.segeumCountThisTurn = 0; u.kkeutCountThisTurn = 0; u.mangunTriggeredThisTurn = false; });
+        allUnits.forEach(u => { u.gyeokdolHealCountThisTurn = 0; u.evadeCountThisTurn = 0; u.segeumCountThisTurn = 0; u.kkeutCountThisTurn = 0; u.mangunTriggeredThisTurn = false; u.firstDmgDoneThisTurn = false; });
         addLog(t, "system", `◆ ${t}번째 턴 시작 ◆`, "turn");
 
         const order = determineActionOrder();
@@ -3392,7 +3734,8 @@
             if (gyeokdolUnit && gyeokdolUnit.gyeokdolChaseRateStacks < 5) gyeokdolUnit.gyeokdolChaseRateStacks++;
 
             const dogwangBoost = (skId === u.innateSkillId && u.skills.includes("dogwang")) ? 6 * (1 + effIntel(u) / 500) : 0;
-            const effRate = Math.min(100, Math.max(5, sk.rate + dogwangBoost - activePenalty));
+            const chokRateBoost = u.tempBuffs.reduce((s, b) => s + (b.activeRateInc || 0), 0);
+            const effRate = Math.min(100, Math.max(5, sk.rate + dogwangBoost + chokRateBoost - activePenalty));
             let triggered = (skId === "chilgun" && u.chargingChilgun) ? true : (Math.random() * 100 < effRate);
             // 우천의 흑운: 우군 액티브 미발동 시 50%(지력 영향) 확률로 운신 1스택 소모해 재판정
             if (!triggered) {
@@ -3694,6 +4037,27 @@
                 const healAmt = Math.sqrt(u.troops) * 1.20 * ((effIntel(u) + effSpeed(u)) / 240) * 1.15;
                 applyHeal(u, u, healAmt, "선봉의 사수-전열", false);
               }
+            } else if (skId === "o_bulgil") {
+              const myUnitsAll = getTeam(u.side);
+              const allWu = myUnitsAll.length === 3 && myUnitsAll.every(a => a.faction === "오");
+              if (allWu) {
+                const intDec = 30 * (1 + effSpeed(u) / 500);
+                addLog(t, u.side, `${nameTag(u)} 진영 전법 [오의 불길] 발동! (적 전체 2턴 화공 + 지력 최고 아군 70% 책략 2인 타격)`);
+                ePool.forEach(e => {
+                  const hadBurn = e.debuffs.burn > 0;
+                  e.debuffs.burn = 2;
+                  if (hadBurn) {
+                    e.debuffs.statDownTurns = Math.max(e.debuffs.statDownTurns, 2);
+                    e.debuffs.statDownIntel = Math.min(intDec * 2, e.debuffs.statDownIntel + intDec);
+                  }
+                });
+                const topI = [...alive(getTeam(u.side))].sort((a, b) => effIntel(b) - effIntel(a))[0];
+                if (topI) {
+                  const picks = [...alive(getEnemies(u.side))].sort(() => Math.random() - 0.5).slice(0, 2);
+                  picks.forEach(e => dealDamage(topI, e, { type: "strat", coef: 70, isNormal: false, isActive: true, source: "오의 불길" }));
+                }
+                triggerSegeum(u);
+              }
             } else {
               // Custom user-added active skill
               const coef = sk.coef || 150;
@@ -3703,6 +4067,11 @@
               picks.forEach(e => dealDamage(u, e, { type: sk.tag === "책략" ? "strat" : "phys", coef, isNormal: false, source: sk.name }));
             }
             // 태평의 여운: 아군 액티브 전법 발동 성공 후 연계 판정
+            if (u.chokUijiActive && skId === u.innateSkillId && alive(getEnemies(u.side)).length) {
+              alive(getEnemies(u.side)).forEach(e => { e.debuffs.threat = Math.max(e.debuffs.threat, 2); });
+              addLog(t, u.side, `${nameTag(u)} 【촉의 의지】 고유 액티브 발동 → 적군 전체 2턴 위협 부여!`);
+              triggerChokUijiDebuff(u);
+            }
             if (alive(getEnemies(u.side)).length) triggerTaepyeong(u);
           }
 
@@ -4863,7 +5232,7 @@
                             <div class="flex flex-wrap gap-1">
                               ${(m.skills || []).map(sk => {
                                 const dupSk = skillUsage[sk] > 1;
-                                const ownedSk = state.ownedSkills.includes(sk);
+                                const ownedSk = getSkillCategory(sk) === "innate" || state.ownedSkills.includes(sk);
                                 const cls = !ownedSk ? "bg-rose-950/70 text-rose-300 border-rose-500/50"
                                   : dupSk ? "bg-amber-950/70 text-amber-300 border-amber-500/50"
                                   : "bg-slate-800 text-slate-200 border-slate-700";
@@ -5328,13 +5697,13 @@
           ...state.ownedSkills,
           ...state.skills.map(sk => sk.name),
           ...state.tierDecks.flatMap(t => t.members.flatMap(m => [...(m.skills || []), ...(m.altSkills || [])]))
-        ]));
+        ])).filter(n => getSkillCategory(n) !== "innate");
         container.innerHTML = `
           <div class="panel-gold p-4 space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-700/60">
               <div>
                 <h3 class="text-sm font-bold text-amber-200">2. 보유 전법 선택 (<span id="ownedSCountTxt">${state.ownedSkills.length}</span>개 보유 중)</h3>
-                <p class="text-xs text-slate-400 mt-0.5">보유 중인 전법을 검색·클릭해 선택/해제하세요. 티어표 대조 및 1~5군 추천에 즉시 반영됩니다.</p>
+                <p class="text-xs text-slate-400 mt-0.5">학습·장착 가능한 전법만 선택합니다. 장수 고유 전법은 장수 배치 시 자동 적용되므로 제외되었으며, 미등록 고유 전법은 상단 <strong class="text-rose-300">필요 데이터</strong>에서 확인할 수 있습니다.</p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
                 <div class="relative">
@@ -5358,7 +5727,7 @@
             wrap.innerHTML = `<p class="text-xs text-slate-500 py-4">검색 결과가 없습니다.</p>`;
             return;
           }
-          const orderCats = ["innate", "faction", "variant", "normal"];
+          const orderCats = ["faction", "variant", "normal"];
           const unownedCls = {
             innate:  "bg-amber-950/20 text-amber-300/60 border-amber-500/30 hover:text-amber-200",
             faction: "bg-fuchsia-950/20 text-fuchsia-300/60 border-fuchsia-500/30 hover:text-fuchsia-200",
@@ -5595,22 +5964,56 @@
         verEl.textContent = `최신 버전 ${UPDATE_LOGS[0].version} (${UPDATE_LOGS[0].date})`;
       }
       const listEl = document.getElementById("homeUpdateList");
+      const pagEl = document.getElementById("homeUpdatePagination");
       if (listEl) {
-        listEl.innerHTML = UPDATE_LOGS.map((u, idx) => `
-          <div class="rounded-xl p-3.5 border ${idx === 0 ? "bg-amber-500/10 border-amber-400/40" : "bg-slate-900/70 border-slate-700/60"} space-y-1.5">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
-                <span class="px-2 py-0.5 rounded text-[11px] font-extrabold ${idx === 0 ? "bg-amber-400 text-slate-950" : "bg-slate-800 text-amber-200 border border-slate-600"}">${u.version}</span>
-                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-800/90 text-slate-300 border border-slate-700">${u.badge}</span>
-                <span class="text-xs sm:text-sm font-bold text-slate-100">${u.title}</span>
+        const perPage = 5;
+        const totalPages = Math.max(1, Math.ceil(UPDATE_LOGS.length / perPage));
+        state.homeUpdatePage = Math.max(1, Math.min(totalPages, state.homeUpdatePage || 1));
+        const startIdx = (state.homeUpdatePage - 1) * perPage;
+        const pageItems = UPDATE_LOGS.slice(startIdx, startIdx + perPage);
+
+        listEl.innerHTML = pageItems.map((u, i) => {
+          const isLatest = (startIdx + i) === 0;
+          return `
+            <div class="rounded-xl p-3.5 border ${isLatest ? "bg-amber-500/10 border-amber-400/40" : "bg-slate-900/70 border-slate-700/60"} space-y-1.5">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded text-[11px] font-extrabold ${isLatest ? "bg-amber-400 text-slate-950" : "bg-slate-800 text-amber-200 border border-slate-600"}">${u.version}</span>
+                  <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-800/90 text-slate-300 border border-slate-700">${u.badge}</span>
+                  <span class="text-xs sm:text-sm font-bold text-slate-100">${u.title}</span>
+                </div>
+                <span class="text-[11px] text-slate-400 font-mono">${u.date}</span>
               </div>
-              <span class="text-[11px] text-slate-400 font-mono">${u.date}</span>
+              <ul class="list-disc list-inside text-xs text-slate-300 space-y-0.5 pl-1">
+                ${u.items.map(it => `<li>${it}</li>`).join("")}
+              </ul>
             </div>
-            <ul class="list-disc list-inside text-xs text-slate-300 space-y-0.5 pl-1">
-              ${u.items.map(it => `<li>${it}</li>`).join("")}
-            </ul>
-          </div>
-        `).join("");
+          `;
+        }).join("");
+
+        if (pagEl) {
+          if (totalPages <= 1) {
+            pagEl.innerHTML = "";
+          } else {
+            const pageBtns = Array.from({ length: totalPages }, (_, k) => k + 1).map(p => `
+              <button type="button" data-upage="${p}" class="home-upage-btn w-7 h-7 rounded-lg text-xs font-bold border transition ${p === state.homeUpdatePage ? "bg-amber-400 text-slate-950 border-amber-300" : "bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800"}">${p}</button>
+            `).join("");
+            pagEl.innerHTML = `
+              <button type="button" data-upage="${state.homeUpdatePage - 1}" ${state.homeUpdatePage <= 1 ? "disabled" : ""} class="home-upage-btn px-2.5 h-7 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition">이전</button>
+              ${pageBtns}
+              <button type="button" data-upage="${state.homeUpdatePage + 1}" ${state.homeUpdatePage >= totalPages ? "disabled" : ""} class="home-upage-btn px-2.5 h-7 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition">다음</button>
+              <span class="text-[11px] text-slate-400 ml-1">(${state.homeUpdatePage} / ${totalPages} 페이지 · 총 ${UPDATE_LOGS.length}건)</span>
+            `;
+            pagEl.querySelectorAll(".home-upage-btn").forEach(btn => {
+              btn.addEventListener("click", () => {
+                const target = Number(btn.dataset.upage);
+                if (!target || target < 1 || target > totalPages) return;
+                state.homeUpdatePage = target;
+                renderHome();
+              });
+            });
+          }
+        }
       }
     }
 
@@ -5658,17 +6061,18 @@
       ]);
 
       const missingGenerals = [...neededGenerals].filter(n => n && !regGenerals.has(n));
-      const missingSkills = [...neededSkills].filter(n => n && !regSkills.has(n));
+      const missingInnateSkills = [...INNATE_SKILL_NAMES].filter(n => n && !regSkills.has(n)).map(n => INNATE_SKILL_OWNERS[n] ? `${n} (${INNATE_SKILL_OWNERS[n]})` : n);
+      const missingSkills = [...neededSkills].filter(n => n && !regSkills.has(n) && getSkillCategory(n) !== "innate");
       const missingStrats = [...neededStrats].filter(n => {
         const clean = n.replace(/<|>|잔편|선본|금서/g, "").trim();
         return clean && !regStrats.has(clean);
       });
-      return { missingGenerals, missingSkills, missingStrats };
+      return { missingGenerals, missingInnateSkills, missingSkills, missingStrats };
     }
 
     function renderMissingDataBadge() {
-      const { missingGenerals, missingSkills, missingStrats } = computeMissingSimData();
-      const total = missingGenerals.length + missingSkills.length + missingStrats.length;
+      const { missingGenerals, missingInnateSkills, missingSkills, missingStrats } = computeMissingSimData();
+      const total = missingGenerals.length + missingInnateSkills.length + missingSkills.length + missingStrats.length;
       const el = document.getElementById("missingDataCount");
       if (el) el.textContent = `${total}건`;
     }
@@ -5681,27 +6085,31 @@
       renderTroops();
 
       document.getElementById("btnMissingDataBadge").addEventListener("click", () => {
-        const { missingGenerals, missingSkills, missingStrats } = computeMissingSimData();
+        const { missingGenerals, missingInnateSkills, missingSkills, missingStrats } = computeMissingSimData();
         const chip = (txt, cls) => `<span class="px-2 py-0.5 rounded text-[11px] border ${cls}">${txt}</span>`;
         openModal(
           "시뮬레이션용 미등록 데이터 목록 (자동 집계)",
           `
-            <p class="text-xs text-slate-400">티어표·내 부대·보유 목록에는 등장하지만 아직 상세 수치(스탯/스킬 설명)가 등록되지 않은 항목들입니다. 스크린샷을 올려주시면 등록과 동시에 목록에서 자동 제외됩니다.</p>
+            <p class="text-xs text-slate-400">티어표·내 부대·등록 장수 중 아직 상세 수치(스탯/스킬 설명)가 미등록된 항목들입니다. 스크린샷을 올려주시면 등록과 동시에 목록에서 자동 제외됩니다.</p>
             <div class="space-y-3 max-h-80 overflow-y-auto log-scroll pr-1">
               <div class="bg-slate-900/80 border border-slate-700 rounded-lg p-3 space-y-1.5">
                 <div class="text-xs font-bold text-rose-300">1. 상세 스탯·성장치 필요 장수 (${missingGenerals.length}명)</div>
                 <div class="flex flex-wrap gap-1">${missingGenerals.map(x => chip(x, "bg-rose-950/50 text-rose-200 border-rose-500/40")).join("") || '<span class="text-xs text-emerald-300">모두 등록 완료!</span>'}</div>
               </div>
+              <div class="bg-slate-900/80 border border-amber-500/40 rounded-lg p-3 space-y-1.5">
+                <div class="text-xs font-bold text-amber-300">2. 상세 효과 필요 장수 고유 전법 (${missingInnateSkills.length}개)</div>
+                <div class="flex flex-wrap gap-1">${missingInnateSkills.map(x => chip(x, "bg-amber-950/50 text-amber-200 border-amber-500/45")).join("") || '<span class="text-xs text-emerald-300">모두 등록 완료!</span>'}</div>
+              </div>
               <div class="bg-slate-900/80 border border-slate-700 rounded-lg p-3 space-y-1.5">
-                <div class="text-xs font-bold text-sky-300">2. 상세 효과(계수·확률) 필요 전법 (${missingSkills.length}개)</div>
+                <div class="text-xs font-bold text-sky-300">3. 상세 효과 필요 일반·진영 전법 (${missingSkills.length}개)</div>
                 <div class="flex flex-wrap gap-1">${missingSkills.map(x => chip(x, "bg-sky-950/50 text-sky-200 border-sky-500/40")).join("") || '<span class="text-xs text-emerald-300">모두 등록 완료!</span>'}</div>
               </div>
               <div class="bg-slate-900/80 border border-slate-700 rounded-lg p-3 space-y-1.5">
-                <div class="text-xs font-bold text-orange-300">3. 상세 효과 필요 병법·금서 (${missingStrats.length}개)</div>
+                <div class="text-xs font-bold text-orange-300">4. 상세 효과 필요 병법·금서 (${missingStrats.length}개)</div>
                 <div class="flex flex-wrap gap-1">${missingStrats.map(x => chip(x, "bg-orange-950/40 text-orange-200 border-orange-500/40")).join("") || '<span class="text-xs text-emerald-300">모두 등록 완료!</span>'}</div>
               </div>
               <div class="bg-slate-900/80 border border-slate-700 rounded-lg p-3 space-y-1">
-                <div class="text-xs font-bold text-amber-300">4. 장비·탈것 특기/이펙트</div>
+                <div class="text-xs font-bold text-amber-300">5. 장비·탈것 특기/이펙트</div>
                 <p class="text-[11px] text-slate-300">현재 등록됨: 특기([극복],[비공],[선방],[약수],[천운]) · 이펙트([불굴],[영광],[수심],[투영],[교감]). 그 외 새로운 특기·이펙트가 나오면 올려주세요.</p>
               </div>
             </div>
