@@ -2253,13 +2253,22 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v54";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v55";
 
     const UPDATE_LOGS = [
       {
-        version: "v1.48",
+        version: "v1.49",
         date: "2026.11.26",
         badge: "최신",
+        title: "필요 데이터 모달의 장비·말 특기/이펙트 현황 실시간 자동 집계로 수정",
+        items: [
+          "필요 데이터 모달 5번 항목의 예전 고정 안내 문구를 제거하고, 실제 등록된 장비(67종)·장비 특기(34종)·장비 이펙트(17종)·말(24종)·말 특기(16종)·말 이펙트(15종) 개수를 실시간 자동 표시하도록 수정"
+        ]
+      },
+      {
+        version: "v1.48",
+        date: "2026.11.26",
+        badge: "",
         title: "도감/데이터(장수·병법·장비·말) 정렬 기준별 그룹 섹션 구분 표시 통일",
         items: [
           "도감/데이터 장수 도감에서 [나라(진영)순] 선택 시 위·촉·오·군웅 섹션 헤더로, [병종순] 선택 시 방패병·창병·기병·궁병 섹션 헤더로 구분 표시",
@@ -7657,7 +7666,7 @@
               </div>
               <div class="bg-slate-900/80 border border-slate-700 rounded-lg p-3 space-y-1">
                 <div class="text-xs font-bold text-amber-300">5. 장비·탈것 특기/이펙트</div>
-                <p class="text-[11px] text-slate-300">현재 등록됨: 특기([극복],[비공],[선방],[약수],[천운]) · 이펙트([불굴],[영광],[수심],[투영],[교감]). 그 외 새로운 특기·이펙트가 나오면 올려주세요.</p>
+                <p class="text-[11px] text-slate-300"><span class="text-emerald-400 font-semibold">모두 등록 완료!</span> (장비 ${EQUIPS.length - 1}종 · 장비 특기 ${EQUIP_SPECIALS.length - 1}종 · 장비 이펙트 ${EQUIP_EFFECTS.length - 1}종 · 말 ${MOUNTS.length - 1}종 · 말 특기 ${MOUNT_SPECIALS.length - 1}종 · 말 이펙트 ${MOUNT_EFFECTS.length - 1}종)</p>
               </div>
             </div>
           `,
