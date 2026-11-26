@@ -275,9 +275,10 @@
       <!-- Top Action Bar -->
       <div class="panel p-4 flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-2">
-          <span class="text-xs font-semibold text-amber-300 uppercase tracking-wider">저장된 프리셋</span>
-          <select id="presetSelect" class="form-select !w-auto min-w-[200px]"></select>
-          <button id="btnLoadPreset" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600/60 text-xs font-semibold">불러오기</button>
+          <span class="text-xs font-semibold text-amber-300 uppercase tracking-wider">티어표 / 프리셋</span>
+          <select id="presetSelect" class="form-select !w-auto min-w-[230px] max-w-[340px]"></select>
+          <button id="btnLoadPresetAlly" class="px-3 py-1.5 rounded-lg bg-sky-600/30 hover:bg-sky-600/50 border border-sky-400/50 text-sky-200 text-xs font-semibold">아군 불러오기</button>
+          <button id="btnLoadPresetEnemy" class="px-3 py-1.5 rounded-lg bg-rose-600/30 hover:bg-rose-600/50 border border-rose-400/50 text-rose-200 text-xs font-semibold">적군 불러오기</button>
           <button id="btnSavePreset" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-amber-500/40 text-amber-200 text-xs font-semibold">현재 덱 저장</button>
           <button id="btnSwapSides" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600/60 text-xs font-semibold flex items-center gap-1">
             <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i> 아군/적군 교체
@@ -300,6 +301,9 @@
       </div>
 
       <!-- Two-Column Deck Editors -->
+            <!-- Global Building Tech (Research) Settings -->
+      <div id="globalResearchBox"></div>
+
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
         <!-- Ally Side -->
         <div class="panel-gold p-4 space-y-4">
@@ -1555,6 +1559,37 @@
       return slot;
     }
 
+    const DEFAULT_MAX_RESEARCH = {
+      muyong: 10, dachaek: 10, cheolbyeok: 10, sinsok: 10,
+      shield: 10, archer: 10, cavalry: 10, spear: 10,
+      def_wei: 10, def_shu: 10, def_wu: 10, def_qun: 10,
+      atk_wei: 10, atk_shu: 10, atk_wu: 10, atk_qun: 10,
+      gosu: 10, maenggong: 10, siegePvp: false
+    };
+    const DEFAULT_ALLY_RESEARCH = {
+      muyong: 3, dachaek: 3, cheolbyeok: 3, sinsok: 3,
+      shield: 1, archer: 1, cavalry: 1, spear: 1,
+      def_wei: 1, def_shu: 1, def_wu: 1, def_qun: 1,
+      atk_wei: 0, atk_shu: 0, atk_wu: 0, atk_qun: 0,
+      gosu: 1, maenggong: 1, siegePvp: false
+    };
+    const DEFAULT_ZERO_RESEARCH = {
+      muyong: 0, dachaek: 0, cheolbyeok: 0, sinsok: 0,
+      shield: 0, archer: 0, cavalry: 0, spear: 0,
+      def_wei: 0, def_shu: 0, def_wu: 0, def_qun: 0,
+      atk_wei: 0, atk_shu: 0, atk_wu: 0, atk_qun: 0,
+      gosu: 0, maenggong: 0, siegePvp: false
+    };
+    function normalizeDeckResearch(deck, side) {
+      const base = side === "ally" ? DEFAULT_ALLY_RESEARCH : DEFAULT_ZERO_RESEARCH;
+      if (!deck.research || typeof deck.research !== "object") {
+        deck.research = { ...base };
+      } else {
+        deck.research = { ...base, ...deck.research };
+      }
+      return deck.research;
+    }
+
     const BONDS = [
       { id: "nanman", name: "남만의 대군", members: ["menghuo", "zhurong"], desc: "부대 내 인연 무장을 이족으로 간주하며, 아군 이족 무장 1명당 모든 이족이 받는 피해 6% 감소" },
       { id: "dongo_daedodok", name: "동오 대도독", members: ["zhouyu", "lumeng", "lusu"], desc: "주유·여몽·노숙 조합 시 활성화 (전투 데이터 #3 확인)" },
@@ -2196,13 +2231,47 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v47";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v50";
 
     const UPDATE_LOGS = [
       {
-        version: "v1.41",
+        version: "v1.44",
         date: "2026.11.26",
         badge: "최신",
+        title: "전투 시뮬레이션 기본 장수 레벨 만렙(50레벨) 통일 적용",
+        items: [
+          "전투 시뮬레이션 기본 설정을 '만렙 통일(50레벨)' 활성 상태로 변경하여 초기 배치 장수 및 티어표 불러오기 장수가 모두 50레벨 기준으로 표시·계산되도록 개선",
+          "티어표 프리셋 불러오기 시에도 각 슬롯 기본 레벨이 50레벨로 세팅되도록 보완(만렙 통일 해제 시 개별 레벨 수정 가능)"
+        ]
+      },
+      {
+        version: "v1.43",
+        date: "2026.11.26",
+        badge: "",
+        title: "시뮬레이터 프리셋 티어표 연동 & 상단 건물 기술 전체 설정(기본 만렙 10) 개편",
+        items: [
+          "기존 저장된 기본 프리셋 비우기 완료 및 시뮬레이터 상단 프리셋 드롭다운에 전체 티어표 덱 리스트 탑재",
+          "선택한 티어표 덱을 원클릭으로 [아군 불러오기] 또는 [적군 불러오기]로 바로 세팅 가능(진형·장수·전법·병법 자동 반영)",
+          "건물 기술(연구소 업그레이드 18종)을 시뮬레이터 상단 전체 설정 패널로 통합하고 기본값을 전부 만렙(10레벨)으로 설정",
+          "상단 패널에서 원하는 연구 수치를 자유롭게 수정하거나 [전부 만렙(10) / 내 연구 / 초기화(0)]로 즉시 전환하여 테스트 가능"
+        ]
+      },
+      {
+        version: "v1.42",
+        date: "2026.11.26",
+        badge: "",
+        title: "연구소 업그레이드 18종 시뮬레이터 연동, 티어표·공존덱 한글 검색 수정 & 방문자 누적 보호",
+        items: [
+          "연구소 업그레이드 18종 전체 반영: 기본 스탯 4종(무용·다책·철벽·신속, Lv당 +2), 병종 강화 4종(방어태세·강궁·경기·신의창, Lv당 피증·받피감 +0.5% + Lv10 턴별 특수 효과), 진영 방어·공격 8종(위·촉·오·군 Lv당 +0.5%), 성지 PvP 고수·맹공 2종(Lv당 +1%)",
+          "아군 기본값에 현재 연구소 레벨(스탯 3·병종 1·진영방어 1·고수/맹공 1) 자동 반영 및 원클릭 [내 연구 / 풀강(10) / 초기화] 버튼 추가",
+          "티어표·공존덱 세트 검색창 한글 자음·모음 분리 현상(IME 조합 끊김) 완전 수정 (DOM 재생성 없는 실시간 인플레이스 필터링 적용)",
+          "방문자 카운터 누적 유지 보호 강화 (고정 네임스페이스 유지, 타임아웃 6.5초 확대·자동 재시도 및 캐시 최댓값 보존)"
+        ]
+      },
+      {
+        version: "v1.41",
+        date: "2026.11.26",
+        badge: "",
         title: "장비 이펙트 17종 100% 완성 & 말 도감 24종·특기 16종·이펙트 15종 전면 업데이트",
         items: [
           "장비 이펙트 나머지 6종(철벽·정숙·진정·고무·우직·파로) 상세 수치 반영 완료 → 장비 이펙트 17종 100% 완성",
@@ -2640,7 +2709,7 @@
         enemy: {
           formation: "ilja",
           supply: 100,
-          buildingTech: false,
+          buildingTech: true,
           slots: [
             { generalId: "pangde", troops: 12000, skills: ["pilsa", "chanran", "apdo"], strategies: ["none", "none", "none"], equip: "none", mount: "none" },
             { generalId: "yujin", troops: 12000, skills: ["chimchak", "heojeom", "gyeongo"], strategies: ["none", "none", "none"], equip: "none", mount: "none" },
@@ -2661,7 +2730,7 @@
       d.enemy = {
         formation: "anhyeong",
         supply: 100,
-        buildingTech: false,
+        buildingTech: true,
         slots: [
           { generalId: "xusheng", troops: 12000, skills: ["baekri", "gyeongo", "jeonryeok"], strategies: ["none", "none", "none"], equip: "none", mount: "none" },
           { generalId: "huangzhong", troops: 12000, skills: ["jeonjang", "pajuk", "toero"], strategies: ["none", "none", "none"], equip: "none", mount: "none" },
@@ -2676,10 +2745,8 @@
       generals: JSON.parse(JSON.stringify(INITIAL_GENERALS)),
       skills: JSON.parse(JSON.stringify(INITIAL_SKILLS)),
       decks: createLv10Decks(),
-      presets: [
-        { id: "default_report", name: "실제 전황 #1: 구찌집사(남만제갈) vs 12레벨 역도", decks: createDefaultDecks() },
-        { id: "report_2_lv10", name: "실제 전황 #2: 구찌집사(남만제갈) vs LV10 토지 수비군(서성·황충·장비)", decks: createLv10Decks() }
-      ],
+      presets: [],
+      globalResearch: { ...DEFAULT_MAX_RESEARCH },
       battleRecords: JSON.parse(JSON.stringify(INITIAL_BATTLE_RECORDS)),
       myTroops: JSON.parse(JSON.stringify(INITIAL_MY_TROOPS)),
       tierDecks: JSON.parse(JSON.stringify(INITIAL_TIER_DECKS)),
@@ -2691,7 +2758,7 @@
       tierSearchQuery: "",
       coexSearchQuery: "",
       homeUpdatePage: 1,
-      maxLevelMode: false,
+      maxLevelMode: true,
       maxLevel: 50,
       activeTab: "home",
       activeDbTab: "generals",
@@ -2708,6 +2775,7 @@
           skills: state.skills,
           decks: state.decks,
           presets: state.presets,
+          globalResearch: state.globalResearch,
           battleRecords: state.battleRecords,
           maxLevel: state.maxLevel,
           maxLevelMode: state.maxLevelMode,
@@ -2732,7 +2800,8 @@
           state.decks.ally.slots.forEach(normalizeSlotGear);
           state.decks.enemy.slots.forEach(normalizeSlotGear);
         }
-        if (Array.isArray(parsed.presets) && parsed.presets.length) state.presets = parsed.presets;
+        if (Array.isArray(parsed.presets)) state.presets = parsed.presets;
+        if (parsed.globalResearch && typeof parsed.globalResearch === "object") state.globalResearch = { ...DEFAULT_MAX_RESEARCH, ...parsed.globalResearch };
         if (Array.isArray(parsed.battleRecords) && parsed.battleRecords.length) state.battleRecords = parsed.battleRecords;
         if (typeof parsed.maxLevel === "number") state.maxLevel = parsed.maxLevel;
         if (typeof parsed.maxLevelMode === "boolean") state.maxLevelMode = parsed.maxLevelMode;
@@ -3091,13 +3160,30 @@
 
         // 4) 건물 기술 보너스 (전 스탯 +6, 주피 +0.5%, 받피 -0.5%)
         const deckObj = side === "ally" ? state.decks.ally : state.decks.enemy;
+        const res = { ...DEFAULT_MAX_RESEARCH, ...(state.globalResearch || {}) };
         if (deckObj.buildingTech) {
+          const troopKeyMap = { "방패병": "shield", "궁병": "archer", "기병": "cavalry", "창병": "spear" };
           units.forEach(u => {
-            u.stats.force += 6; u.stats.intel += 6; u.stats.command += 6; u.stats.speed += 6;
-            u.dmgInc += 0.5;
-            addDmgRed(u, 0.5);
+            u.research = res;
+            u.stats.force += (res.muyong || 0) * 2;
+            u.stats.intel += (res.dachaek || 0) * 2;
+            u.stats.command += (res.cheolbyeok || 0) * 2;
+            u.stats.speed += (res.sinsok || 0) * 2;
+            const tk = troopKeyMap[u.troopType];
+            const tLv = tk ? (res[tk] || 0) : 0;
+            if (tLv > 0) {
+              u.dmgInc += tLv * 0.5;
+              addDmgRed(u, tLv * 0.5);
+            }
+            if (res.siegePvp) {
+              if (res.maenggong > 0) u.dmgInc += res.maenggong * 1;
+              if (res.gosu > 0) addDmgRed(u, res.gosu * 1);
+            }
           });
-          addLog(0, side, `${nameTag(leader)} 부대 【건물 기술】 적용: 전 스탯 +6, 주는 피해 +0.5%, 받는 피해 -0.5%`);
+          const siegeTxt = res.siegePvp ? `, 성지PvP(고수-${res.gosu}%/맹공+${res.maenggong}%)` : "";
+          addLog(0, side, `${nameTag(leader)} 부대 【연구소 기술】 적용: 무+${res.muyong*2}/지+${res.dachaek*2}/통+${res.cheolbyeok*2}/선+${res.sinsok*2}, 병종(방${res.shield}/궁${res.archer}/기${res.cavalry}/창${res.spear})${siegeTxt}`);
+        } else {
+          units.forEach(u => { u.research = null; });
         }
 
         // 5) 인연 보너스 (곱연산 체감 중첩)
@@ -3645,7 +3731,8 @@
           (attacker.strategies.includes("hoik_seon") && Math.random() < 0.80) ||
           (attacker.strategies.includes("hoik_su") && Math.random() < 0.667) || (attacker.strategies.includes("hoik_jan") && Math.random() < 0.533)
         );
-        if (opts.isNormal && !hoikIgnore && target.evadeRate > 0 && Math.random() * 100 < target.evadeRate) {
+        const effEvade = (target.evadeRate || 0) + (target.evade || 0) + target.tempBuffs.reduce((s, b) => s + (b.evadeAdd || 0), 0);
+        if (opts.isNormal && !hoikIgnore && effEvade > 0 && Math.random() * 100 < effEvade) {
           target.evadeCountThisTurn++;
           addLog(currentTurn, attacker.side, `${nameTag(target)} 피신 발동! ${nameTag(attacker)}의 일반 공격 회피`);
           return 0;
@@ -3738,8 +3825,23 @@
         // Attacker dmgDealtDec debuff (비공)
         if (attacker.debuffs.dmgDealtDecTurns > 0) dmgInc -= attacker.debuffs.dmgDealtDec;
 
+        // 연구소 진영별 공격/방어 보너스 (위국 토벌·저항 등 레벨당 0.5%)
+        const facKeyMap = { "위": "wei", "촉": "shu", "오": "wu", "군웅": "qun", "군": "qun" };
+        if (attacker.research) {
+          const tFk = facKeyMap[target.faction];
+          if (tFk && attacker.research["atk_" + tFk] > 0) {
+            dmgInc += attacker.research["atk_" + tFk] * 0.5;
+          }
+        }
+
         // Target damage reduction (곱연산 체감 중첩)
         let remainMult = 1 - target.dmgRed / 100;
+        if (target.research) {
+          const aFk = facKeyMap[attacker.faction];
+          if (aFk && target.research["def_" + aFk] > 0) {
+            remainMult *= (1 - (target.research["def_" + aFk] * 0.5) / 100);
+          }
+        }
         target.tempBuffs.forEach(b => { if (b.dmgRed) remainMult *= (1 - b.dmgRed / 100); });
         if (target.strategies.includes("byeongjeong") && currentTurn <= 4) remainMult *= 0.94;
         if (target.strategies.includes("byeongjeong_su") && currentTurn <= 4) remainMult *= 0.95;
@@ -4171,6 +4273,25 @@
         Object.keys(taepyeongCountThisTurn).forEach(k => delete taepyeongCountThisTurn[k]);
         allUnits.forEach(u => { u.gyeokdolHealCountThisTurn = 0; u.evadeCountThisTurn = 0; u.segeumCountThisTurn = 0; u.kkeutCountThisTurn = 0; u.mangunTriggeredThisTurn = false; u.firstDmgDoneThisTurn = false; });
         addLog(t, "system", `◆ ${t}번째 턴 시작 ◆`, "turn");
+        // 연구소 병종 10레벨 해제 특수 효과
+        allUnits.filter(u => u.troops > 0 && u.research).forEach(u => {
+          if (t === 1 && u.troopType === "기병" && u.research.cavalry >= 10) {
+            u.tempBuffs.push({ name: "연구소-경기10", turns: 1, evadeAdd: 5 });
+            addLog(t, u.side, `${nameTag(u)} 【연구소-경기 Lv10】 발동: 1턴 피신 확률 +5%`);
+          }
+          if (t === 2 && u.troopType === "방패병" && u.research.shield >= 10) {
+            u.tempBuffs.push({ name: "연구소-방어태세10", turns: 1, dmgRed: 7 });
+            addLog(t, u.side, `${nameTag(u)} 【연구소-방어태세 Lv10】 발동: 2턴 받는 피해 -7%`);
+          }
+          if (t === 3 && u.troopType === "궁병" && u.research.archer >= 10) {
+            u.tempBuffs.push({ name: "연구소-강궁10", turns: 1, critRate: 10 });
+            addLog(t, u.side, `${nameTag(u)} 【연구소-강궁 Lv10】 발동: 3턴 회심·묘책 확률 +10%`);
+          }
+          if (t === 4 && u.troopType === "창병" && u.research.spear >= 10) {
+            u.tempBuffs.push({ name: "연구소-신의창10", turns: 1, penetration: 8 });
+            addLog(t, u.side, `${nameTag(u)} 【연구소-신의창 Lv10】 발동: 4턴 관통·간파 +8%`);
+          }
+        });
 
         const order = determineActionOrder();
         addLog(t, "system", `행동 순서: ${order.map(u => `${u.name}(${Math.round(u.stats.speed)})`).join(" → ")}`, "order");
@@ -5434,9 +5555,170 @@
 
     function renderPresets() {
       const sel = document.getElementById("presetSelect");
-      sel.innerHTML = state.presets.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+      if (!sel) return;
+      const tierOpts = state.tierDecks.map((td, idx) =>
+        `<option value="tier:${idx}">[${td.tier}] ${td.name} (${td.formation})</option>`
+      ).join("");
+      const customOpts = state.presets.length
+        ? `<optgroup label="저장된 커스텀 프리셋 (${state.presets.length}개)">` +
+          state.presets.map(p => `<option value="preset:${p.id}">${p.name}</option>`).join("") +
+          `</optgroup>`
+        : "";
+      sel.innerHTML = `<optgroup label="★ 티어표 덱 리스트 (${state.tierDecks.length}개)">${tierOpts}</optgroup>${customOpts}`;
     }
 
+    function applyTierDeckToSide(td, side) {
+      if (!td) return;
+      const fObj = FORMATIONS.find(f => f.name === td.formation) || FORMATIONS[0];
+      const deck = state.decks[side];
+      deck.formation = fObj.id;
+      const findSkillId = (sName) => {
+        if (!sName) return "none";
+        const clean = sName.trim();
+        const found = state.skills.find(sk => sk.name === clean);
+        return found ? found.id : "none";
+      };
+      const findStratId = (stName) => {
+        if (!stName) return "none";
+        const parts = stName.split("/").map(x => x.trim()).filter(Boolean);
+        for (const p of parts) {
+          const bare = p.replace(/^금서\s*/, "").replace(/[<>]/g, "").trim();
+          const found = STRATEGIES.find(st => {
+            const sn = st.name.replace(/[<>]/g, "").trim();
+            return st.name === p || sn === p || sn === bare || sn.startsWith(bare + " ") || (p.startsWith("금서") && st.isGoldBook && sn.includes(bare));
+          });
+          if (found) return found.id;
+        }
+        return "none";
+      };
+      td.members.slice(0, 3).forEach((m, i) => {
+        const g = state.generals.find(x => x.name === m.name);
+        if (!g) return;
+        const prevTroops = (deck.slots[i] && deck.slots[i].troops > 0) ? deck.slots[i].troops : 10000;
+        const innateId = g.innateSkill || "none";
+        const s1 = findSkillId((m.skills || [])[0]);
+        const s2 = findSkillId((m.skills || [])[1]);
+        const stArr = (m.strategies || []).slice(0, 3).map(findStratId);
+        while (stArr.length < 3) stArr.push("none");
+        deck.slots[i] = {
+          ...(deck.slots[i] || {}),
+          generalId: g.id,
+          level: state.maxLevel || 50,
+          troops: prevTroops,
+          skills: [innateId, s1, s2],
+          strategies: stArr,
+          equip: (deck.slots[i] && deck.slots[i].equip) || "none",
+          mount: (deck.slots[i] && deck.slots[i].mount) || "none"
+        };
+        normalizeSlotGear(deck.slots[i]);
+      });
+    }
+
+
+    function renderGlobalResearchPanel(keepOpen = false) {
+      const box = document.getElementById("globalResearchBox");
+      if (!box) return;
+      const wasOpen = keepOpen || Boolean(box.querySelector("details[open]"));
+      const r = state.globalResearch = { ...DEFAULT_MAX_RESEARCH, ...(state.globalResearch || {}) };
+      const numField = (key, label) => `
+        <label class="flex items-center justify-between gap-1.5 bg-slate-900/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-[11px]">
+          <span class="text-slate-300 truncate">${label}</span>
+          <input type="number" min="0" max="10" value="${r[key] || 0}" data-rkey="${key}" class="global-res-input w-12 text-center bg-slate-950 border border-slate-700 rounded text-amber-300 font-bold text-xs py-0.5" />
+        </label>`;
+      box.innerHTML = `
+        <details class="panel p-3.5 border-amber-500/35" ${wasOpen ? "open" : ""}>
+          <summary class="cursor-pointer flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-amber-200 select-none">
+            <div class="flex flex-wrap items-center gap-2">
+              <span>🏛️ 건물 기술 전체 설정 (연구소 업그레이드)</span>
+              <span class="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-400/30 text-[11px] text-amber-300 font-semibold">
+                무+${r.muyong*2} · 지+${r.dachaek*2} · 통+${r.cheolbyeok*2} · 선+${r.sinsok*2} | 병종 방${r.shield}/궁${r.archer}/기${r.cavalry}/창${r.spear} | 진영 방어·공격 ${r.def_wei}/${r.atk_wei}Lv${r.siegePvp ? ` | 성지PvP 고수-${r.gosu}%·맹공+${r.maenggong}%` : ""}
+              </span>
+            </div>
+            <span class="text-[11px] text-slate-400 font-normal">클릭하여 수치 수정</span>
+          </summary>
+          <div class="mt-3 pt-3 border-t border-slate-700/60 space-y-3 text-xs">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <label class="inline-flex items-center gap-1.5 text-xs text-sky-300 cursor-pointer">
+                <input type="checkbox" id="chkGlobalSiegePvp" class="accent-sky-400" ${r.siegePvp ? "checked" : ""} />
+                <span>성지·동맹 주성 구역 PvP (고수·맹공 적용)</span>
+              </label>
+              <div class="flex flex-wrap items-center gap-1.5">
+                <button type="button" class="btn-global-res-preset px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/40 text-emerald-200 text-xs font-semibold" data-mode="max">전부 만렙(10)</button>
+                <button type="button" class="btn-global-res-preset px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/40 text-amber-200 text-xs font-semibold" data-mode="mine">내 연구</button>
+                <button type="button" class="btn-global-res-preset px-2.5 py-1 rounded-lg bg-slate-700/60 hover:bg-slate-600/60 border border-slate-600 text-slate-300 text-xs font-semibold" data-mode="zero">초기화(0)</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              <div>
+                <div class="text-[11px] text-slate-400 mb-1.5">기본 스탯 (Lv당 +2, 만렙 +20)</div>
+                <div class="grid grid-cols-2 gap-1.5">
+                  ${numField("muyong", "무용(무력)")}
+                  ${numField("dachaek", "다책(지력)")}
+                  ${numField("cheolbyeok", "철벽(통솔)")}
+                  ${numField("sinsok", "신속(선공)")}
+                </div>
+              </div>
+              <div>
+                <div class="text-[11px] text-slate-400 mb-1.5">병종 강화 (Lv당 ±0.5% / 만렙 턴 특수)</div>
+                <div class="grid grid-cols-2 gap-1.5">
+                  ${numField("shield", "방어태세(방패)")}
+                  ${numField("archer", "강궁(궁병)")}
+                  ${numField("cavalry", "경기(기병)")}
+                  ${numField("spear", "신의창(창병)")}
+                </div>
+              </div>
+              <div>
+                <div class="text-[11px] text-slate-400 mb-1.5">성지 PvP (Lv당 1%, 체크 시 적용)</div>
+                <div class="grid grid-cols-2 gap-1.5">
+                  ${numField("gosu", "고수(받피감)")}
+                  ${numField("maenggong", "맹공(주피증)")}
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="text-[11px] text-slate-400 mb-1.5">진영별 방어 / 공격 (Lv당 0.5%, 만렙 5%)</div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5">
+                ${numField("def_wei", "위국저항")}
+                ${numField("def_shu", "촉국방어")}
+                ${numField("def_wu", "오국저지")}
+                ${numField("def_qun", "혼란진압")}
+                ${numField("atk_wei", "위국토벌")}
+                ${numField("atk_shu", "촉국격파")}
+                ${numField("atk_wu", "오국정벌")}
+                ${numField("atk_qun", "혼란평정")}
+              </div>
+            </div>
+          </div>
+        </details>
+      `;
+      box.querySelectorAll(".global-res-input").forEach(inp => {
+        inp.addEventListener("change", e => {
+          const val = Math.max(0, Math.min(10, parseInt(e.target.value, 10) || 0));
+          e.target.value = val;
+          state.globalResearch[e.target.dataset.rkey] = val;
+          saveState();
+          renderGlobalResearchPanel(true);
+        });
+      });
+      const siegeChk = document.getElementById("chkGlobalSiegePvp");
+      if (siegeChk) {
+        siegeChk.addEventListener("change", e => {
+          state.globalResearch.siegePvp = e.target.checked;
+          saveState();
+          renderGlobalResearchPanel(true);
+        });
+      }
+      box.querySelectorAll(".btn-global-res-preset").forEach(btn => {
+        btn.addEventListener("click", e => {
+          const mode = e.target.dataset.mode;
+          if (mode === "max") state.globalResearch = { ...DEFAULT_MAX_RESEARCH, siegePvp: state.globalResearch.siegePvp };
+          else if (mode === "mine") state.globalResearch = { ...DEFAULT_ALLY_RESEARCH, siegePvp: state.globalResearch.siegePvp };
+          else if (mode === "zero") state.globalResearch = { ...DEFAULT_ZERO_RESEARCH, siegePvp: false };
+          saveState();
+          renderGlobalResearchPanel(true);
+        });
+      });
+    }
     function renderBuilder() {
       renderPresets();
       renderFormationSelect("allyFormation", state.decks.ally.formation);
@@ -5449,6 +5731,7 @@
       document.getElementById("maxLevelVal").value = state.maxLevel;
       renderFormationVisual("ally");
       renderFormationVisual("enemy");
+      renderGlobalResearchPanel();
       renderDeckSlots("ally");
       renderDeckSlots("enemy");
       lucide.createIcons();
@@ -6192,7 +6475,7 @@
                 <div class="relative">
                   <input id="tierSearchInput" value="${state.tierSearchQuery || ""}" class="form-input !w-48 !py-1.5 !pl-7 !pr-6 !text-xs" placeholder="장수·덱 검색 (예: 사마의, 여포)" />
                   <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2"></i>
-                  ${state.tierSearchQuery ? `<button id="btnClearTierSearch" type="button" class="absolute right-2 top-1.5 text-slate-400 hover:text-white text-xs">×</button>` : ""}
+                  <button id="btnClearTierSearch" type="button" class="absolute right-2 top-1.5 text-slate-400 hover:text-white text-xs" style="${state.tierSearchQuery ? "" : "display:none"}">×</button>
                 </div>
                 <select id="tierStageSel" class="form-select !w-auto !py-1.5 !text-xs">
                   <option value="all" ${state.tierStageFilter === "all" ? "selected" : ""}>시기: 전체</option>
@@ -6209,14 +6492,11 @@
               </div>
             </div>
 
-            <div class="space-y-4">
+            <div id="tierDeckCardsWrap" class="space-y-4">
               ${state.tierDecks.map((td, tdIdx) => ({ td, tdIdx })).filter(({ td }) => {
                 const stOk = state.tierStageFilter === "all" || !td.stage || td.stage.includes(state.tierStageFilter);
                 const btOk = state.tierBtFilter === "all" || !td.bt || td.bt === "모든 돌파" || td.bt === state.tierBtFilter;
-                const terms = (state.tierSearchQuery || "").trim().toLowerCase().split(/\s+/).filter(Boolean);
-                const hay = [td.name, td.formation, td.tier, ...td.members.map(m => m.name), ...td.members.flatMap(m => m.skills || [])].join(" ").toLowerCase();
-                const qOk = !terms.length || terms.every(t => hay.includes(t));
-                return stOk && btOk && qOk;
+                return stOk && btOk;
               }).map(({ td, tdIdx }) => {
                 let gHit = 0, sHit = 0, sTot = 0;
                 td.members.forEach(m => {
@@ -6238,8 +6518,11 @@
                   });
                 });
                 const pct = Math.round(((ownedG + ownedS) / Math.max(1, totalG + totalS)) * 100);
+                const _tierHay = [td.name, td.formation, td.tier, ...td.members.map(m => m.name), ...td.members.flatMap(m => m.skills || [])].join(" ").toLowerCase().replace(/"/g, "&quot;");
+                const _tierTerms = (state.tierSearchQuery || "").trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
+                const _tierShow = !_tierTerms.length || _tierTerms.every(t => _tierHay.includes(t));
                 return `
-                  <div class="panel-gold p-4 space-y-3">
+                  <div class="tier-deck-card panel-gold p-4 space-y-3" data-search="${_tierHay}" style="${_tierShow ? "" : "display:none"}">
                     <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-700/60">
                       <div class="flex flex-wrap items-center gap-2">
                         <span class="px-2 py-0.5 rounded bg-amber-400 text-slate-950 font-extrabold text-xs">${td.tier}</span>
@@ -6345,18 +6628,25 @@
           });
         });
 
+        const applyTierSearchInPlace = (q) => {
+          state.tierSearchQuery = q;
+          const terms = (q || "").trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
+          container.querySelectorAll(".tier-deck-card").forEach(card => {
+            const hay = card.dataset.search || "";
+            card.style.display = (!terms.length || terms.every(t => hay.includes(t))) ? "" : "none";
+          });
+          const clr = document.getElementById("btnClearTierSearch");
+          if (clr) clr.style.display = q ? "" : "none";
+        };
         const tierSearchEl = document.getElementById("tierSearchInput");
         if (tierSearchEl) {
-          tierSearchEl.addEventListener("input", e => {
-            const pos = e.target.selectionStart;
-            state.tierSearchQuery = e.target.value;
-            renderTroops();
-            const next = document.getElementById("tierSearchInput");
-            if (next) { next.focus(); next.setSelectionRange(pos, pos); }
-          });
+          tierSearchEl.addEventListener("input", e => applyTierSearchInPlace(e.target.value));
         }
         const clearTierBtn = document.getElementById("btnClearTierSearch");
-        if (clearTierBtn) clearTierBtn.addEventListener("click", () => { state.tierSearchQuery = ""; renderTroops(); });
+        if (clearTierBtn) clearTierBtn.addEventListener("click", () => {
+          if (tierSearchEl) { tierSearchEl.value = ""; tierSearchEl.focus(); }
+          applyTierSearchInPlace("");
+        });
 
         const tSt = document.getElementById("tierStageSel");
         const tBt = document.getElementById("tierBtSel");
@@ -6576,12 +6866,9 @@
           renderMissingDataBadge();
         });
             } else if (state.activeTroopsSubTab === "coexistence") {
-        const coexTerms = (state.coexSearchQuery || "").trim().toLowerCase().split(/\s+/).filter(Boolean);
+        const coexTerms = (state.coexSearchQuery || "").trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
         const filteredSets = COEXISTENCE_SETS.filter(cs => {
-          const btOk = state.tierBtFilter === "all" || cs.bt === "모든 돌파" || cs.bt === state.tierBtFilter;
-          const hay = [cs.name, cs.desc, ...cs.decks.map(d => d.name), ...cs.decks.flatMap(d => d.members.map(m => m.name)), ...cs.decks.flatMap(d => d.members.flatMap(m => m.skills || []))].join(" ").toLowerCase();
-          const qOk = !coexTerms.length || coexTerms.every(t => hay.includes(t));
-          return btOk && qOk;
+          return state.tierBtFilter === "all" || cs.bt === "모든 돌파" || cs.bt === state.tierBtFilter;
         });
         const scoredSets = filteredSets.map(cs => {
           let gTot = 0, gHit = 0, sTot = 0, sHit = 0;
@@ -6610,7 +6897,7 @@
                 <div class="relative">
                   <input id="coexSearchInput" value="${state.coexSearchQuery || ""}" class="form-input !w-48 !py-1.5 !pl-7 !pr-6 !text-xs" placeholder="장수·덱 검색 (예: 육손, 여포)" />
                   <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2"></i>
-                  ${state.coexSearchQuery ? `<button id="btnClearCoexSearch" type="button" class="absolute right-2 top-1.5 text-slate-400 hover:text-white text-xs">×</button>` : ""}
+                  <button id="btnClearCoexSearch" type="button" class="absolute right-2 top-1.5 text-slate-400 hover:text-white text-xs" style="${state.coexSearchQuery ? "" : "display:none"}">×</button>
                 </div>
                 <select id="coexBtFilter" class="form-select !w-auto !py-1.5 !text-xs">
                 <option value="all" ${state.tierBtFilter === "all" ? "selected" : ""}>돌파: 전체</option>
@@ -6621,8 +6908,11 @@
             </div>
 
             <div class="space-y-4">
-              ${scoredSets.map(({ cs, pct, gHit, gTot, sHit, sTot, missG, missS }) => `
-                <div class="panel-gold p-4 space-y-3">
+              ${scoredSets.map(({ cs, pct, gHit, gTot, sHit, sTot, missG, missS }) => {
+                const _cHay = [cs.name, cs.desc, ...cs.decks.map(d => d.name), ...cs.decks.flatMap(d => d.members.map(m => m.name)), ...cs.decks.flatMap(d => d.members.flatMap(m => m.skills || []))].join(" ").toLowerCase().replace(/"/g, "&quot;");
+                const _cShow = !coexTerms.length || coexTerms.every(t => _cHay.includes(t));
+                return `
+                <div class="coex-set-card panel-gold p-4 space-y-3" data-search="${_cHay}" style="${_cShow ? "" : "display:none"}">` + `
                   <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-700/60">
                     <div class="flex flex-wrap items-center gap-2">
                       <span class="px-2 py-0.5 rounded bg-amber-400 text-slate-950 font-extrabold text-xs">${cs.count}공존</span>
@@ -6675,23 +6965,30 @@
                     `).join("")}
                   </div>
                 </div>
-              `).join("")}
+              `; }).join("")}
             </div>
           </div>
         `;
 
+        const applyCoexSearchInPlace = (q) => {
+          state.coexSearchQuery = q;
+          const terms = (q || "").trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
+          container.querySelectorAll(".coex-set-card").forEach(card => {
+            const hay = card.dataset.search || "";
+            card.style.display = (!terms.length || terms.every(t => hay.includes(t))) ? "" : "none";
+          });
+          const clr = document.getElementById("btnClearCoexSearch");
+          if (clr) clr.style.display = q ? "" : "none";
+        };
         const coexSearchEl = document.getElementById("coexSearchInput");
         if (coexSearchEl) {
-          coexSearchEl.addEventListener("input", e => {
-            const pos = e.target.selectionStart;
-            state.coexSearchQuery = e.target.value;
-            renderTroops();
-            const next = document.getElementById("coexSearchInput");
-            if (next) { next.focus(); next.setSelectionRange(pos, pos); }
-          });
+          coexSearchEl.addEventListener("input", e => applyCoexSearchInPlace(e.target.value));
         }
         const clearCoexBtn = document.getElementById("btnClearCoexSearch");
-        if (clearCoexBtn) clearCoexBtn.addEventListener("click", () => { state.coexSearchQuery = ""; renderTroops(); });
+        if (clearCoexBtn) clearCoexBtn.addEventListener("click", () => {
+          if (coexSearchEl) { coexSearchEl.value = ""; coexSearchEl.focus(); }
+          applyCoexSearchInPlace("");
+        });
 
         document.getElementById("coexBtFilter").addEventListener("change", e => {
           state.tierBtFilter = e.target.value;
@@ -7043,17 +7340,28 @@
 
         const alreadyCounted = localStorage.getItem(VISITOR_COUNTED_KEY) === todayStr;
         const mode = alreadyCounted ? "get" : "hit";
-        const [todayVal, totalVal] = await Promise.all([
-          fetchAbacusFast(mode, `day-${todayStr}`, 3000),
-          fetchAbacusFast(mode, "total-uv", 3000)
+        let [todayVal, totalVal] = await Promise.all([
+          fetchAbacusFast(mode, `day-${todayStr}`, 6500),
+          fetchAbacusFast(mode, "total-uv", 6500)
         ]);
+        // get에서 404(0) 또는 일시 타임아웃(null) 시 1회 재시도 (누적 초기화 방지)
+        if (mode === "get" && totalVal === 0) {
+          totalVal = await fetchAbacusFast("hit", "total-uv", 6500);
+        } else if (totalVal === null) {
+          totalVal = await fetchAbacusFast(mode, "total-uv", 6500);
+        }
+        if (mode === "get" && todayVal === 0) {
+          todayVal = await fetchAbacusFast("hit", `day-${todayStr}`, 6500);
+        }
 
         if (todayVal !== null || totalVal !== null) {
-          if (!alreadyCounted) {
+          if (!alreadyCounted && (todayVal > 0 || totalVal > 0)) {
             try { localStorage.setItem(VISITOR_COUNTED_KEY, todayStr); } catch (e) {}
           }
-          visitorState.today = todayVal !== null ? todayVal : Math.max(1, visitorState.today);
-          visitorState.total = totalVal !== null ? totalVal : Math.max(1, visitorState.total);
+          const prevToday = visitorState.today || 0;
+          const prevTotal = visitorState.total || 0;
+          visitorState.today = Math.max(prevToday, todayVal !== null ? todayVal : 1);
+          visitorState.total = Math.max(prevTotal, totalVal !== null ? totalVal : 1, visitorState.today);
           visitorState.days[todayStr] = visitorState.today;
           visitorState.synced = true;
           visitorState.syncFailed = false;
@@ -7257,15 +7565,29 @@
         showToast("아군과 적군 덱을 교체했습니다.");
       });
 
-      document.getElementById("btnLoadPreset").addEventListener("click", () => {
-        const id = document.getElementById("presetSelect").value;
-        const p = state.presets.find(x => x.id === id);
-        if (!p) return;
-        state.decks = JSON.parse(JSON.stringify(p.decks));
-        saveState();
-        renderBuilder();
-        showToast(`프리셋 [${p.name}] 불러오기 완료`);
-      });
+      function handleLoadPresetToSide(targetSide) {
+        const val = document.getElementById("presetSelect").value;
+        if (!val) return;
+        if (val.startsWith("tier:")) {
+          const idx = parseInt(val.slice(5), 10);
+          const td = state.tierDecks[idx];
+          if (!td) return;
+          applyTierDeckToSide(td, targetSide);
+          saveState();
+          renderBuilder();
+          showToast(`${targetSide === "ally" ? "아군" : "적군"}에 티어표 [${td.name}] 덱을 불러왔습니다.`);
+        } else if (val.startsWith("preset:")) {
+          const id = val.slice(7);
+          const p = state.presets.find(x => x.id === id);
+          if (!p) return;
+          state.decks = JSON.parse(JSON.stringify(p.decks));
+          saveState();
+          renderBuilder();
+          showToast(`프리셋 [${p.name}] 불러오기 완료`);
+        }
+      }
+      document.getElementById("btnLoadPresetAlly").addEventListener("click", () => handleLoadPresetToSide("ally"));
+      document.getElementById("btnLoadPresetEnemy").addEventListener("click", () => handleLoadPresetToSide("enemy"));
 
       document.getElementById("btnSavePreset").addEventListener("click", () => {
         openModal(
