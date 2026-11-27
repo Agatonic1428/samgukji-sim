@@ -2277,14 +2277,24 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v70";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v71";
     const USER_OWNED_KEY = "samgukji_user_owned_persist_v1";
 
     const UPDATE_LOGS = [
       {
-        version: "v1.64",
+        version: "v1.65",
         date: "2026.11.27",
         badge: "최신",
+        title: "대체 전법 모의 전투 검증 상대를 실제 등록된 상위 티어덱 4종으로 고도화",
+        items: [
+          "대체 전법 선정 시 임시 NPC 상대가 아닌, 실제 등록된 상위 티어덱 4종(T0·T0.3·T0.5 등)과 직접 모의 전투를 돌려 종합 승률·잔여 병력·피해/치유 이득이 가장 높은 전법을 선정하도록 고도화",
+          "대체 전법 [대체] 배지 툴팁에 실제로 겨룬 상위 티어덱 4종 목록과 종합 검증 수치를 함께 표시"
+        ]
+      },
+      {
+        version: "v1.64",
+        date: "2026.11.27",
+        badge: "",
         title: "대체 전법 추천 시 실제 전투 시뮬레이션 검증 기반 최적 전법 자동 선정",
         items: [
           "1~5군 추천에서 전법을 대체할 때 단순 동일 태그 매칭이 아니라, 장수의 주 스탯(무력·지력·통솔)·포지션(전열/후열)에 맞는 상위 4종 후보를 실제 전투 시뮬레이션으로 직접 비교 검증해 가장 승률·잔여 병력·피해/치유 이득이 큰 전법을 자동 선정",
@@ -7100,39 +7110,34 @@
             return { td, score };
           }).sort((a, b) => b.score - a.score);
 
-          const makeBenchmarkEnemyDeck = () => {
-            const pickG = (name) => state.generals.find(x => x.name === name) || state.generals[0];
-            const mk = (name, s1, s2) => {
-              const g = pickG(name);
-              const fSk = (sn) => (state.skills.find(x => x.name === sn)?.id) || "none";
-              return {
-                generalId: g.id, level: 50, troops: 10000,
-                skills: [g.innateSkill || "none", fSk(s1), fSk(s2)],
-                strategies: ["none", "none", "none"],
-                equip: "none", mount: "none",
-                equipConfig: makeGearConfig("none", false),
-                mountConfig: makeGearConfig("none", true)
-              };
-            };
-            return {
-              formation: "anhyeong", supply: 100, buildingTech: true,
-              slots: [mk("등애", "전력 지원", "청낭 치료"), mk("하후돈", "요새 함락", "견고한 방어"), mk("장비", "칠군수몰", "만군 멸시")]
-            };
-          };
-
-          const buildTempAllyDeckForTest = (td, memberIdx, testSkillName) => {
+          const buildSimDeckFromTier = (td, overrideMemberIdx = -1, overrideSkillName = "") => {
             const fObj = FORMATIONS.find(f => f.name === td.formation) || FORMATIONS[0];
             const fSk = (sn) => (state.skills.find(x => x.name === sn)?.id) || "none";
+            const fSt = (stName) => {
+              if (!stName) return "none";
+              const parts = stName.split("/").map(x => x.trim()).filter(Boolean);
+              for (const p of parts) {
+                const bare = p.replace(/^금서\s*/, "").replace(/[<>]/g, "").trim();
+                const found = STRATEGIES.find(st => {
+                  const sn = st.name.replace(/[<>]/g, "").trim();
+                  return st.name === p || sn === p || sn === bare || sn.startsWith(bare + " ");
+                });
+                if (found) return found.id;
+              }
+              return "none";
+            };
             return {
               formation: fObj.id, supply: 100, buildingTech: true,
               slots: td.members.slice(0, 3).map((mem, idx) => {
                 const g = state.generals.find(x => x.name === mem.name) || state.generals[0];
                 const skList = [...(mem.skills || [])];
-                if (idx === memberIdx && skList.length) skList[0] = testSkillName;
+                if (idx === overrideMemberIdx && overrideSkillName) skList[0] = overrideSkillName;
+                const stList = (mem.strategies || []).slice(0, 3).map(fSt);
+                while (stList.length < 3) stList.push("none");
                 return {
                   generalId: g.id, level: 50, troops: 10000,
                   skills: [g.innateSkill || "none", fSk(skList[0]), fSk(skList[1])],
-                  strategies: ["none", "none", "none"],
+                  strategies: stList,
                   equip: "none", mount: "none",
                   equipConfig: makeGearConfig("none", false),
                   mountConfig: makeGearConfig("none", true)
@@ -7141,35 +7146,46 @@
             };
           };
 
-          const evalSkillBySim = (td, memberIdx, candName, trials = 6) => {
+          const getMetaTierOpponents = (excludeName) => {
+            const tw = { "T0": 100, "T0.3": 95, "T0.5": 90, "T0.8": 80, "T1": 70, "T2": 50 };
+            const valid = state.tierDecks
+              .filter(d => d.name !== excludeName && d.members.length === 3 && d.members.every(m => state.generals.some(g => g.name === m.name)))
+              .sort((a, b) => (tw[b.tier] || 40) - (tw[a.tier] || 40));
+            return valid.slice(0, 4).map(d => ({ name: d.name, tier: d.tier, deck: buildSimDeckFromTier(d) }));
+          };
+
+          const evalSkillBySim = (td, memberIdx, candName, trialsPerOpp = 2) => {
             const savedDecks = state.decks;
             const savedMax = state.maxLevelMode;
-            let wins = 0, totalRemain = 0, totalDmg = 0, totalHeal = 0;
+            const opps = getMetaTierOpponents(td.name);
+            if (!opps.length) return { score: 0, winRate: 0, avgRemain: 0, avgDmg: 0, avgHeal: 0, oppNames: [] };
+            let wins = 0, totalRemain = 0, totalDmg = 0, totalHeal = 0, totalRuns = 0;
             try {
               state.maxLevelMode = true;
-              state.decks = {
-                ally: buildTempAllyDeckForTest(td, memberIdx, candName),
-                enemy: makeBenchmarkEnemyDeck()
-              };
-              for (let k = 0; k < trials; k++) {
-                const res = runBattleSimulation(8);
-                if (res.winner === "ally") wins++;
-                totalRemain += res.allyUnits.reduce((s, u) => s + Math.max(0, u.troops), 0);
-                totalDmg += res.allyUnits.reduce((s, u) => s + (u.totalDmg || 0), 0);
-                totalHeal += res.allyUnits.reduce((s, u) => s + (u.totalHeal || 0), 0);
+              const allyDeck = buildSimDeckFromTier(td, memberIdx, candName);
+              for (const opp of opps) {
+                state.decks = { ally: allyDeck, enemy: opp.deck };
+                for (let k = 0; k < trialsPerOpp; k++) {
+                  const res = runBattleSimulation(8);
+                  if (res.winner === "ally") wins++;
+                  totalRemain += res.allyUnits.reduce((s, u) => s + Math.max(0, u.troops), 0);
+                  totalDmg += res.allyUnits.reduce((s, u) => s + (u.totalDmg || 0), 0);
+                  totalHeal += res.allyUnits.reduce((s, u) => s + (u.totalHeal || 0), 0);
+                  totalRuns++;
+                }
               }
             } catch (e) {
-              return { score: 0, winRate: 0, avgRemain: 0, avgDmg: 0, avgHeal: 0 };
+              return { score: 0, winRate: 0, avgRemain: 0, avgDmg: 0, avgHeal: 0, oppNames: opps.map(o => o.name) };
             } finally {
               state.decks = savedDecks;
               state.maxLevelMode = savedMax;
             }
-            const winRate = Math.round((wins / trials) * 100);
-            const avgRemain = Math.round(totalRemain / trials);
-            const avgDmg = Math.round(totalDmg / trials);
-            const avgHeal = Math.round(totalHeal / trials);
+            const winRate = Math.round((wins / Math.max(1, totalRuns)) * 100);
+            const avgRemain = Math.round(totalRemain / Math.max(1, totalRuns));
+            const avgDmg = Math.round(totalDmg / Math.max(1, totalRuns));
+            const avgHeal = Math.round(totalHeal / Math.max(1, totalRuns));
             const score = winRate * 220 + avgRemain * 1.4 + avgDmg * 0.35 + avgHeal * 0.45;
-            return { score, winRate, avgRemain, avgDmg, avgHeal };
+            return { score, winRate, avgRemain, avgDmg, avgHeal, oppNames: opps.map(o => o.name) };
           };
 
           const pickBestSimSubstitute = (td, member, mIdx, origName, usedSet, candSet, ownedOnly, causeTxt) => {
@@ -7221,7 +7237,7 @@
             const tested = preScored.map(c => ({
               name: c.name,
               pre: c.pre,
-              sim: evalSkillBySim(td, mIdx, c.name, 6)
+              sim: evalSkillBySim(td, mIdx, c.name, 2)
             })).sort((a, b) => b.sim.score - a.sim.score);
 
             const best = tested[0];
@@ -7229,7 +7245,8 @@
             const cmpTxt = second
               ? ` (차순위 [${second.name}] 잔여 ${second.sim.avgRemain.toLocaleString()} 대비 우위)`
               : "";
-            const reason = `원본 [${origName}] ${causeTxt} → ${member.name}(${roleLabel}·${member.pos || "배치"}) 기준 상위 ${tested.length}종 모의 전투 검증 결과, [${best.name}] 장착 시 승률 ${best.sim.winRate}% · 평균 잔여 병력 ${best.sim.avgRemain.toLocaleString()}(총 피해 ${best.sim.avgDmg.toLocaleString()} / 치유 ${best.sim.avgHeal.toLocaleString()})로 가장 이득${cmpTxt}`;
+            const oppSummary = best.sim.oppNames && best.sim.oppNames.length ? best.sim.oppNames.join("·") : "주요 티어덱";
+            const reason = `원본 [${origName}] ${causeTxt} → ${member.name}(${roleLabel}) 기준 상위 티어덱 4종(${oppSummary}) 상대 모의 전투 결과, [${best.name}] 장착 시 승률 ${best.sim.winRate}% · 평균 잔여 병력 ${best.sim.avgRemain.toLocaleString()}(피해 ${best.sim.avgDmg.toLocaleString()} / 치유 ${best.sim.avgHeal.toLocaleString()})로 가장 유리${cmpTxt}`;
             return { name: best.name, reason };
           };
 
