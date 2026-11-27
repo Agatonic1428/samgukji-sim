@@ -2277,14 +2277,24 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v73";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v74";
     const USER_OWNED_KEY = "samgukji_user_owned_persist_v1";
 
     const UPDATE_LOGS = [
       {
-        version: "v1.67",
+        version: "v1.68",
         date: "2026.11.27",
         badge: "최신",
+        title: "대체 전법 안내 툴팁을 1순위·2순위 카드형 레이아웃으로 통일 개선",
+        items: [
+          "1~5군 추천 조합의 시안색 [대체] 전법 호버 툴팁을 미보유 전법 대체 추천과 동일한 깔끔한 카드형 레이아웃으로 개편",
+          "원본 전법·대체 사유 요약, 1순위 추천 카드(승률·평균 잔여 병력·피해/치유량·전법 설명), 2순위 대안 카드를 한눈에 비교 가능"
+        ]
+      },
+      {
+        version: "v1.67",
+        date: "2026.11.27",
+        badge: "",
         title: "미보유(없음) 전법 마우스 호버 시 상위 티어덱 4종 모의 전투 기반 대체 전법 추천 툴팁 추가",
         items: [
           "1~5군 추천 조합, 티어표, 공존덱 세트의 모든 빨간색 미보유 전법((없음) / [없음]) 배지에 마우스를 올리면 대체 전법 추천 툴팁 표시",
@@ -7064,10 +7074,32 @@
                                     <span class="px-2 py-0.5 text-[11px] rounded border bg-cyan-950/80 text-cyan-200 border-cyan-400/70 ring-1 ring-cyan-400/25 font-semibold cursor-help inline-flex items-center gap-1">
                                       <span class="text-[9px] px-1 rounded bg-cyan-400/25 text-cyan-200 font-bold">대체</span>${sk}
                                     </span>
-                                    <span class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full left-0 mb-1.5 z-50 w-72 p-3 rounded-xl bg-slate-950/95 border border-cyan-400/60 shadow-xl text-left">
+                                    <span class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full left-0 mb-1.5 z-50 w-80 p-3 rounded-xl bg-slate-950/95 border border-cyan-400/60 shadow-2xl text-left">
                                       <span class="block text-[11px] font-bold text-cyan-300 mb-1">🔄 대체 전법 안내</span>
-                                      <span class="block text-[11px] text-slate-200 leading-snug">${rep.reason}</span>
-                                      ${skDesc ? `<span class="block text-[10px] text-slate-400 mt-1.5 pt-1 border-t border-slate-800 leading-snug">${skDesc}</span>` : ""}
+                                      ${rep.best ? `
+                                        <span class="block text-[10px] text-slate-400 mb-1.5 leading-snug">
+                                          원본 [${rep.orig}] ${rep.causeTxt || "대체"} · ${rep.memberName}(${rep.roleLabel}) 기준 상위 티어덱 4종(${rep.oppSummary}) 모의 전투 결과
+                                        </span>
+                                        <span class="block p-2 rounded-lg bg-cyan-950/50 border border-cyan-500/40 mb-1.5">
+                                          <span class="flex items-center justify-between gap-1 text-[11px] font-bold text-cyan-200">
+                                            <span>1순위: ${rep.best.name}</span>
+                                            <span class="text-[10px] text-emerald-300">승률 ${rep.best.sim.winRate}%</span>
+                                          </span>
+                                          <span class="block text-[10px] text-slate-200 mt-0.5">평균 잔여 ${rep.best.sim.avgRemain.toLocaleString()} (피해 ${rep.best.sim.avgDmg.toLocaleString()} / 치유 ${rep.best.sim.avgHeal.toLocaleString()})</span>
+                                          ${(rep.best.desc || skDesc) ? `<span class="block text-[10px] text-slate-400 mt-1 pt-1 border-t border-slate-800/80 leading-snug">${rep.best.desc || skDesc}</span>` : ""}
+                                        </span>
+                                        ${rep.second ? `
+                                          <span class="block px-2 py-1.5 rounded-lg bg-slate-900/90 border border-slate-700/70">
+                                            <span class="flex items-center justify-between gap-1 text-[10px] font-semibold text-slate-200">
+                                              <span>2순위 대안: ${rep.second.name}</span>
+                                              <span class="text-amber-300">승률 ${rep.second.sim.winRate}% · 잔여 ${rep.second.sim.avgRemain.toLocaleString()}</span>
+                                            </span>
+                                          </span>
+                                        ` : ""}
+                                      ` : `
+                                        <span class="block text-[11px] text-slate-200 leading-snug">${rep.reason}</span>
+                                        ${skDesc ? `<span class="block text-[10px] text-slate-400 mt-1.5 pt-1 border-t border-slate-800 leading-snug">${skDesc}</span>` : ""}
+                                      `}
                                     </span>
                                   </span>`;
                                 }
@@ -7192,7 +7224,17 @@
               : "";
             const oppSummary = best.sim.oppNames && best.sim.oppNames.length ? best.sim.oppNames.join("·") : "주요 티어덱";
             const reason = `원본 [${origName}] ${causeTxt} → ${member.name}(${roleLabel}) 기준 상위 티어덱 4종(${oppSummary}) 상대 모의 전투 결과, [${best.name}] 장착 시 승률 ${best.sim.winRate}% · 평균 잔여 병력 ${best.sim.avgRemain.toLocaleString()}(피해 ${best.sim.avgDmg.toLocaleString()} / 치유 ${best.sim.avgHeal.toLocaleString()})로 가장 유리${cmpTxt}`;
-            return { name: best.name, reason };
+            return {
+              name: best.name,
+              reason,
+              origName,
+              causeTxt,
+              memberName: member.name,
+              roleLabel,
+              oppSummary,
+              best: { name: best.name, sim: best.sim, desc: state.skills.find(x => x.name === best.name)?.desc || "" },
+              second: second ? { name: second.name, sim: second.sim } : null
+            };
           };
 
           let filled = 0;
@@ -7233,7 +7275,7 @@
                     if (sub) {
                       resolvedSk.push(sub.name);
                       candidateSkills.add(sub.name);
-                      replacedMap[sub.name] = { orig: sk, reason: sub.reason };
+                      replacedMap[sub.name] = { orig: sk, reason: sub.reason, causeTxt: sub.causeTxt, memberName: sub.memberName, roleLabel: sub.roleLabel, oppSummary: sub.oppSummary, best: sub.best, second: sub.second };
                       swappedNotes.push(`${m.name}: ${sk}→${sub.name}(${state.ownedSkillsOnlyFilter ? "보유 대체" : "중복 대체"})`);
                     } else {
                       skillConflict = true;
