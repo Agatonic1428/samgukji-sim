@@ -285,6 +285,9 @@
           <button id="btnSwapSides" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600/60 text-xs font-semibold flex items-center gap-1">
             <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i> 아군/적군 교체
           </button>
+          <button id="btnResetSimDecks" class="px-3 py-1.5 rounded-lg bg-rose-950/50 hover:bg-rose-900/60 border border-rose-500/40 text-rose-200 text-xs font-semibold flex items-center gap-1">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> 전체 초기화
+          </button>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
           <div class="flex items-center gap-2 bg-slate-900/90 border border-amber-500/35 rounded-lg px-2.5 py-1.5 text-xs">
@@ -1093,14 +1096,14 @@
     };
 
     const FORMATIONS = [
-      { id: "ilja", name: "일자진", type: "triple", slots: [{ row: "front", rate: 33 }, { row: "front", rate: 34 }, { row: "front", rate: 33 }], dots: [1,1,1,0,0,0], desc: "전열이 받는 피해 8% 감소", frontDmgRed: 8 },
-      { id: "gihyeong", name: "기형진", type: "single", slots: [{ row: "front", rate: 60 }, { row: "back", rate: 20 }, { row: "back", rate: 20 }], dots: [0,1,0,0,1,1], desc: "전열 받는 피해 6% 감소, 후열 주는 피해 12% 증가", frontDmgRed: 6, backDmgInc: 12 },
-      { id: "anhyeong", name: "안형진", type: "double", slots: [{ row: "back", rate: 20 }, { row: "front", rate: 40 }, { row: "front", rate: 40 }], dots: [0,1,1,1,0,0], desc: "전열 통솔 20포인트 증가, 후열 주는 피해 15% 증가", frontCommand: 20, backDmgInc: 15 },
-      { id: "bangwon", name: "방원진", type: "double", slots: [{ row: "front", rate: 40 }, { row: "front", rate: 40 }, { row: "back", rate: 20 }], dots: [1,1,0,0,0,1], desc: "전열 받는 피해 5% 감소, 후열 연타율 40% 증가", frontDmgRed: 5, backDoubleHit: 40 },
-      { id: "chuhyeong", name: "추형진", type: "single", slots: [{ row: "back", rate: 20 }, { row: "front", rate: 60 }, { row: "back", rate: 20 }], dots: [0,1,0,1,0,1], desc: "전열 주는 피해 16% 증가, 후열 받는 피해 5% 감소", frontDmgInc: 16, backDmgRed: 5 },
-      { id: "eorin", name: "어린진", type: "single", slots: [{ row: "front", rate: 60 }, { row: "back", rate: 20 }, { row: "back", rate: 20 }], dots: [1,0,0,0,1,1], desc: "전열 피신 12% 증가, 후열 회심·묘책 확률 8% 증가", frontEvade: 12, backCrit: 8 },
-      { id: "guhaeng", name: "구행진", type: "single", slots: [{ row: "back", rate: 20 }, { row: "back", rate: 20 }, { row: "front", rate: 60 }], dots: [0,0,1,1,1,0], desc: "전열 받는 피해 8% 감소, 후열 연타율 25% 증가", frontDmgRed: 8, backDoubleHit: 25 },
-      { id: "eonwol", name: "언월진", type: "double", slots: [{ row: "front", rate: 40 }, { row: "back", rate: 20 }, { row: "front", rate: 40 }], dots: [1,0,1,0,1,0], desc: "전열 주는 피해 14% 증가, 후열 받는 피해 5% 감소", frontDmgInc: 14, backDmgRed: 5 }
+      { id: "ilja", name: "일자진", type: "triple", slots: [{ row: "front", rate: 33, cell: 0, posLabel: "전열 좌" }, { row: "front", rate: 34, cell: 1, posLabel: "전열 중" }, { row: "front", rate: 33, cell: 2, posLabel: "전열 우" }], dots: [1,1,1,0,0,0], desc: "전열이 받는 피해 8% 감소", frontDmgRed: 8 },
+      { id: "gihyeong", name: "기형진", type: "single", slots: [{ row: "front", rate: 60, cell: 1, posLabel: "전열 중" }, { row: "back", rate: 20, cell: 4, posLabel: "후열 중" }, { row: "back", rate: 20, cell: 5, posLabel: "후열 우" }], dots: [0,1,0,0,1,1], desc: "전열 받는 피해 6% 감소, 후열 주는 피해 12% 증가", frontDmgRed: 6, backDmgInc: 12 },
+      { id: "anhyeong", name: "안형진", type: "double", slots: [{ row: "back", rate: 20, cell: 3, posLabel: "후열 좌" }, { row: "front", rate: 40, cell: 1, posLabel: "전열 중" }, { row: "front", rate: 40, cell: 2, posLabel: "전열 우" }], dots: [0,1,1,1,0,0], desc: "전열 통솔 20포인트 증가, 후열 주는 피해 15% 증가", frontCommand: 20, backDmgInc: 15 },
+      { id: "bangwon", name: "방원진", type: "double", slots: [{ row: "front", rate: 40, cell: 0, posLabel: "전열 좌" }, { row: "front", rate: 40, cell: 1, posLabel: "전열 중" }, { row: "back", rate: 20, cell: 5, posLabel: "후열 우" }], dots: [1,1,0,0,0,1], desc: "전열 받는 피해 5% 감소, 후열 연타율 40% 증가", frontDmgRed: 5, backDoubleHit: 40 },
+      { id: "chuhyeong", name: "추형진", type: "single", slots: [{ row: "back", rate: 20, cell: 3, posLabel: "후열 좌" }, { row: "front", rate: 60, cell: 1, posLabel: "전열 중" }, { row: "back", rate: 20, cell: 5, posLabel: "후열 우" }], dots: [0,1,0,1,0,1], desc: "전열 주는 피해 16% 증가, 후열 받는 피해 5% 감소", frontDmgInc: 16, backDmgRed: 5 },
+      { id: "eorin", name: "어린진", type: "single", slots: [{ row: "front", rate: 60, cell: 0, posLabel: "전열 좌" }, { row: "back", rate: 20, cell: 4, posLabel: "후열 중" }, { row: "back", rate: 20, cell: 5, posLabel: "후열 우" }], dots: [1,0,0,0,1,1], desc: "전열 피신 12% 증가, 후열 회심·묘책 확률 8% 증가", frontEvade: 12, backCrit: 8 },
+      { id: "guhaeng", name: "구행진", type: "single", slots: [{ row: "back", rate: 20, cell: 3, posLabel: "후열 좌" }, { row: "back", rate: 20, cell: 4, posLabel: "후열 중" }, { row: "front", rate: 60, cell: 2, posLabel: "전열 우" }], dots: [0,0,1,1,1,0], desc: "전열 받는 피해 8% 감소, 후열 연타율 25% 증가", frontDmgRed: 8, backDoubleHit: 25 },
+      { id: "eonwol", name: "언월진", type: "double", slots: [{ row: "front", rate: 40, cell: 0, posLabel: "전열 좌" }, { row: "back", rate: 20, cell: 4, posLabel: "후열 중" }, { row: "front", rate: 40, cell: 2, posLabel: "전열 우" }], dots: [1,0,1,0,1,0], desc: "전열 주는 피해 14% 증가, 후열 받는 피해 5% 감소", frontDmgInc: 14, backDmgRed: 5 }
     ];
 
     const STRATEGIES = [
@@ -2262,13 +2265,63 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v56";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v61";
 
     const UPDATE_LOGS = [
       {
-        version: "v1.50",
+        version: "v1.55",
         date: "2026.11.27",
         badge: "최신",
+        title: "전법 전용 아이콘 이미지 추가 & 시뮬레이터 실제 2×3 진형 배치도(좌·중·우) 개편",
+        items: [
+          "전법 도감 및 보유 전법 목록에 분류(고유·진영·영본·일반)와 발동유형(지휘·패시브·액티브·추격)별 전용 전법 아이콘 이미지 추가",
+          "전투 시뮬레이션 진형 배치도를 실제 게임과 동일한 2행(전열·후열) × 3열(좌·중·우) 격자 구조로 개편해 각 장수의 정확한 위치(예: 전열 좌·전열 중·후열 우)를 한눈에 확인 가능"
+        ]
+      },
+      {
+        version: "v1.54",
+        date: "2026.11.27",
+        badge: "",
+        title: "전투 시뮬레이션 초기 빈 슬롯 시작 및 [전체 초기화] 버튼 추가",
+        items: [
+          "전투 시뮬레이션 초기 상태를 아군·적군 모두 빈 슬롯(미배치)으로 시작하도록 변경",
+          "시뮬레이터 상단에 [전체 초기화] 버튼을 추가해 언제든 아군·적군 편성을 한 번에 비울 수 있도록 개선",
+          "빈 슬롯 상태에서도 진형·보너스가 안전하게 표시되며, 개별 장수를 [— 장수 선택 —]으로 비우거나 가나다순으로 선택 가능"
+        ]
+      },
+      {
+        version: "v1.53",
+        date: "2026.11.27",
+        badge: "",
+        title: "덱 추천 필터 체크박스 문구 간결화 (보유 장수 / 보유 전법)",
+        items: [
+          "★ 1~5군 추천 조합·티어표·공존덱 세트의 필터 체크박스 표기를 [보유 장수], [보유 전법]으로 간결하게 변경"
+        ]
+      },
+      {
+        version: "v1.52",
+        date: "2026.11.27",
+        badge: "",
+        title: "덱 추천 메뉴에 [보유 전법으로만] 필터 체크박스 추가",
+        items: [
+          "★ 1~5군 추천 조합·티어표·공존덱 세트 탭의 [보유 장수로만] 옆에 [보유 전법으로만] 체크박스 추가",
+          "두 체크박스를 개별 또는 동시에 조합해 보유 장수·보유 전법 100% 충족 덱만 정밀 필터링 및 자동 추천 가능"
+        ]
+      },
+      {
+        version: "v1.51",
+        date: "2026.11.27",
+        badge: "",
+        title: "덱 추천 메뉴에 [보유 장수로만 추천] 필터 체크박스 추가",
+        items: [
+          "★ 1~5군 추천 조합 탭에 [보유 장수로만 추천] 체크박스 추가: 체크 후 자동 추천 시 보유 중인 장수만으로 구성된 덱만 선별 추천",
+          "티어표 및 공존덱 세트 탭에도 [보유 장수로만] 체크박스를 연동해 보유 장수 100% 충족 덱·세트만 바로 필터링 가능"
+        ]
+      },
+      {
+        version: "v1.50",
+        date: "2026.11.27",
+        badge: "",
         title: "전투 데이터 #5 추가 (49 남만제갈 vs LV12 토지 수비군 2연전 완승, 누적 5건)",
         items: [
           "전투 데이터 #5 등록: 구찌집사(49 축융부인·맹획·SP제갈량 27,000) vs LV12 토지 수비군 1부대(50 하후돈·등애·정욱 48,000) & 2부대(50 조운·장비·마초 48,000) 2연전 완승 (총 손실 3,052)",
@@ -2838,7 +2891,7 @@
     let state = {
       generals: JSON.parse(JSON.stringify(INITIAL_GENERALS)),
       skills: JSON.parse(JSON.stringify(INITIAL_SKILLS)),
-      decks: createLv10Decks(),
+      decks: createEmptyDecks(),
       presets: [],
       globalResearch: { ...DEFAULT_MAX_RESEARCH },
       battleRecords: JSON.parse(JSON.stringify(INITIAL_BATTLE_RECORDS)),
@@ -2857,6 +2910,8 @@
       dbGenSort: "name",
       dbSkillSort: "name",
       dbStratSort: "name",
+      ownedOnlyFilter: false,
+      ownedSkillsOnlyFilter: false,
       maxLevelMode: true,
       maxLevel: 50,
       activeTab: "home",
@@ -2910,6 +2965,27 @@
         if (Array.isArray(parsed.ownedSkills)) state.ownedSkills = parsed.ownedSkills.filter(n => getSkillCategory(n) !== "innate");
       } catch (e) {}
     }
+
+    function makeEmptySlot() {
+      return {
+        generalId: "",
+        level: 50,
+        troops: 10000,
+        skills: ["none", "none", "none"],
+        strategies: ["none", "none", "none"],
+        equip: "none",
+        mount: "none",
+        equipConfig: makeGearConfig("none", false),
+        mountConfig: makeGearConfig("none", true)
+      };
+    }
+    function createEmptyDecks() {
+      return {
+        ally: { formation: "anhyeong", supply: 100, buildingTech: true, slots: [makeEmptySlot(), makeEmptySlot(), makeEmptySlot()] },
+        enemy: { formation: "anhyeong", supply: 100, buildingTech: true, slots: [makeEmptySlot(), makeEmptySlot(), makeEmptySlot()] }
+      };
+    }
+    function getGeneralOrNull(id) { return id ? (state.generals.find(g => g.id === id) || null) : null; }
 
     function getGeneral(id) { return state.generals.find(g => g.id === id) || state.generals[0]; }
     function getSlotLevel(slot, g) {
@@ -2968,7 +3044,7 @@
     // =========================================================================
     function evaluateDeckBonuses(deck) {
       const formation = getFormation(deck.formation);
-      const generals = deck.slots.map(s => getGeneral(s.generalId));
+      const generals = deck.slots.map(s => getGeneralOrNull(s.generalId)).filter(Boolean);
       const bonuses = [];
 
       // Faction bonus (2 same faction => +5%, 3 same faction => +10% all stats — verified in Battle #3)
@@ -3178,8 +3254,8 @@
       const allyBonus = evaluateDeckBonuses(state.decks.ally);
       const enemyBonus = evaluateDeckBonuses(state.decks.enemy);
 
-      const allyUnits = state.decks.ally.slots.map((s, i) => buildUnit(s, i, "ally", state.decks.ally, allyBonus));
-      const enemyUnits = state.decks.enemy.slots.map((s, i) => buildUnit(s, i, "enemy", state.decks.enemy, enemyBonus));
+      const allyUnits = state.decks.ally.slots.map((s, i) => getGeneralOrNull(s.generalId) ? buildUnit(s, i, "ally", state.decks.ally, allyBonus) : null).filter(Boolean);
+      const enemyUnits = state.decks.enemy.slots.map((s, i) => getGeneralOrNull(s.generalId) ? buildUnit(s, i, "enemy", state.decks.enemy, enemyBonus) : null).filter(Boolean);
       const allUnits = [...allyUnits, ...enemyUnits];
 
       const getTeam = (side) => side === "ally" ? allyUnits : enemyUnits;
@@ -5387,21 +5463,51 @@
       const f = bInfo.formation;
       const container = document.getElementById(`${side}FormationVisual`);
 
-      const frontSlots = [];
-      const backSlots = [];
-      deck.slots.forEach((slot, i) => {
-        const g = getGeneral(slot.generalId);
-        const pos = f.slots[i];
-        const card = `
-          <div class="flex flex-col items-center gap-1 bg-slate-900/70 border border-slate-700/70 rounded-lg px-2 py-1.5 min-w-[74px]">
-            <img src="${g.portrait}" alt="${g.name}" class="w-9 h-9 rounded-full object-cover border border-amber-400/60" />
-            <span class="text-[11px] font-semibold truncate max-w-[70px]">${g.name}</span>
-            <span class="text-[10px] text-amber-300">피격 ${pos.rate}%</span>
-          </div>
-        `;
-        if (pos.row === "front") frontSlots.push(card);
-        else backSlots.push(card);
+      // Build exact 6-cell map (0..2 = 전열 좌/중/우, 3..5 = 후열 좌/중/우)
+      const cellToSlot = {};
+      f.slots.forEach((pos, idx) => {
+        cellToSlot[pos.cell] = { slot: deck.slots[idx], idx, pos };
       });
+
+      const colLabels = ["좌", "중", "우"];
+      const renderRowGrid = (rowIdx, rowName) => {
+        const cells = [0, 1, 2].map(col => {
+          const cellId = rowIdx * 3 + col;
+          const entry = cellToSlot[cellId];
+          if (!entry) {
+            return `
+              <div class="rounded-lg border border-slate-800/70 bg-slate-950/35 h-[84px] flex flex-col items-center justify-center opacity-45">
+                <span class="text-[10px] text-slate-600">${rowName} ${colLabels[col]}</span>
+                <span class="text-[9px] text-slate-700 mt-0.5">—</span>
+              </div>`;
+          }
+          const { slot, idx, pos } = entry;
+          const g = getGeneralOrNull(slot.generalId);
+          if (!g) {
+            return `
+              <div class="rounded-lg border border-dashed border-amber-500/45 bg-amber-950/15 h-[84px] px-1.5 py-1.5 flex flex-col items-center justify-center gap-0.5">
+                <span class="text-[9px] font-bold text-amber-300/80">${idx + 1}번 · ${pos.posLabel}</span>
+                <span class="text-[11px] font-semibold text-slate-400">빈 슬롯</span>
+                <span class="text-[10px] text-amber-400/70">피격 ${pos.rate}%</span>
+              </div>`;
+          }
+          return `
+            <div class="rounded-lg border ${side === "ally" ? "border-sky-400/50 bg-sky-950/25" : "border-rose-400/50 bg-rose-950/25"} h-[84px] px-1.5 py-1 flex flex-col items-center justify-center gap-0.5 relative">
+              <span class="absolute top-1 left-1.5 text-[9px] font-bold ${side === "ally" ? "text-sky-300" : "text-rose-300"}">${idx + 1}</span>
+              <img src="${g.portrait}" alt="${g.name}" class="w-9 h-9 rounded-full object-cover border border-amber-400/70" />
+              <span class="text-[11px] font-bold truncate max-w-[78px] leading-tight">${g.name}</span>
+              <span class="text-[9px] text-amber-300 leading-tight">${pos.posLabel} · ${pos.rate}%</span>
+            </div>`;
+        }).join("");
+        return `
+          <div>
+            <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+              <span class="font-bold ${rowIdx === 0 ? "text-amber-300" : "text-sky-300"}">${rowName}</span>
+              <span class="text-[9px] text-slate-500">좌 · 중 · 우</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5">${cells}</div>
+          </div>`;
+      };
 
       const dotsHtml = `
         <div class="grid grid-cols-3 gap-1 w-8">
@@ -5421,17 +5527,13 @@
       container.innerHTML = `
         <div class="bg-slate-950/60 border border-slate-700/60 rounded-xl p-3 space-y-2">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-amber-200">${f.name} 배치도</span>
+            <span class="text-xs font-bold text-amber-200">${f.name} 실제 진형 배치도</span>
             ${dotsHtml}
           </div>
           <div class="space-y-2">
-            <div>
-              <div class="text-[10px] text-slate-400 mb-1">전열</div>
-              <div class="flex justify-center gap-2">${frontSlots.join("") || '<span class="text-[11px] text-slate-600">없음</span>'}</div>
-            </div>
+            ${renderRowGrid(0, "전열")}
             <div class="border-t border-dashed border-slate-700/70 pt-1.5">
-              <div class="text-[10px] text-slate-400 mb-1">후열</div>
-              <div class="flex justify-center gap-2">${backSlots.join("") || '<span class="text-[11px] text-slate-600">없음</span>'}</div>
+              ${renderRowGrid(1, "후열")}
             </div>
           </div>
           <p class="text-[11px] text-emerald-300 text-center pt-1">${f.desc}</p>
@@ -5442,7 +5544,6 @@
         </div>
       `;
     }
-
     function renderDeckSlots(side) {
       const deck = state.decks[side];
       const f = getFormation(deck.formation);
@@ -5450,10 +5551,36 @@
 
       container.innerHTML = deck.slots.map((slot, idx) => {
         normalizeSlotGear(slot);
-        const g = getGeneral(slot.generalId);
+        const g = getGeneralOrNull(slot.generalId);
         const pos = f.slots[idx];
         const eq = slot.equipConfig;
         const mt = slot.mountConfig;
+
+        const sortedGenOpts = [...state.generals].sort((a, b) => koCmp(a.name, b.name));
+        const generalOptions = `<option value="" ${!g ? "selected" : ""}>— 장수 선택 —</option>` + sortedGenOpts.map(gen =>
+          `<option value="${gen.id}" ${g && gen.id === g.id ? "selected" : ""}>[${gen.faction}] ${gen.name} (${gen.troopType})</option>`
+        ).join("");
+
+        if (!g) {
+          return `
+            <div class="rounded-xl bg-slate-900/50 border border-dashed border-slate-700/80 p-3.5 space-y-2">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-11 h-11 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-500 text-xs font-bold">${idx + 1}</div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <select class="form-select !py-1 !text-xs !w-44 slot-general" data-side="${side}" data-idx="${idx}">
+                        ${generalOptions}
+                      </select>
+                      <span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">${pos.posLabel || (pos.row === "front" ? "전열" : "후열")} · 피격 ${pos.rate}%</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-1">장수를 선택하거나 상단 티어표 프리셋에서 불러오면 전법·병법·장비가 활성화됩니다.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
 
         const curLv = getSlotLevel(slot, g);
         const lvStats = getStatsAtLevel(g, curLv);
@@ -5461,10 +5588,6 @@
         const totalIntel = (lvStats.intel + (Number(eq.stats.intel) || 0) + (Number(mt.stats.intel) || 0)).toFixed(1);
         const totalCmd = (lvStats.command + (Number(eq.stats.command) || 0) + (Number(mt.stats.command) || 0)).toFixed(1);
         const totalSpd = (lvStats.speed + (Number(eq.stats.speed) || 0) + (Number(mt.stats.speed) || 0)).toFixed(1);
-
-        const generalOptions = state.generals.map(gen =>
-          `<option value="${gen.id}" ${gen.id === slot.generalId ? "selected" : ""}>[${gen.faction}] ${gen.name} (${gen.troopType})</option>`
-        ).join("");
 
         const skillSelects = [0, 1, 2].map(si => {
           const isInnate = si === 0;
@@ -5608,11 +5731,18 @@
       container.querySelectorAll(".slot-general").forEach(el => {
         el.addEventListener("change", e => {
           const s = e.target.dataset.side, i = Number(e.target.dataset.idx);
+          if (!e.target.value) {
+            state.decks[s].slots[i] = makeEmptySlot();
+            saveState();
+            renderFormationVisual(s);
+            renderDeckSlots(s);
+            return;
+          }
           const g = getGeneral(e.target.value);
           state.decks[s].slots[i] = {
             generalId: g.id,
-            level: g.level,
-            troops: g.troops,
+            level: state.maxLevelMode ? state.maxLevel : (g.level || 50),
+            troops: g.troops || 10000,
             skills: [...g.defaultSkills],
             strategies: [...g.defaultStrategies],
             equip: g.defaultEquip,
@@ -6143,6 +6273,32 @@
     // =========================================================================
     // 7. RENDERING — DATABASE & CUSTOM EDITOR
     // =========================================================================
+    function getSkillIconHtml(skName, skObj = null, size = 36) {
+      const cleanName = String(skName || "전법").replace(/\(.*?\)/g, "").replace(/^반·/, "").trim();
+      const crest = cleanName.slice(0, 2) || "전법";
+      const cat = getSkillCategory(skName || "");
+      const sk = skObj || state.skills.find(x => x.name === skName);
+      const sType = sk?.type || "";
+      const palette = {
+        innate:  { bg1: "#451a03", bg2: "#92400e", border: "#fbbf24", glow: "rgba(251,191,36,0.35)", accent: "#fde68a" },
+        faction: { bg1: "#3b0764", bg2: "#701a75", border: "#e879f9", glow: "rgba(232,121,249,0.35)", accent: "#f5d0fe" },
+        variant: { bg1: "#083344", bg2: "#155e75", border: "#22d3ee", glow: "rgba(34,211,238,0.35)", accent: "#a5f3fc" },
+        normal:  { bg1: "#0f172a", bg2: "#1e3a8a", border: "#60a5fa", glow: "rgba(96,165,250,0.30)", accent: "#dbeafe" }
+      }[cat] || { bg1: "#0f172a", bg2: "#1e3a8a", border: "#60a5fa", glow: "rgba(96,165,250,0.30)", accent: "#dbeafe" };
+      const typeGlyph = sType === "지휘"
+        ? '<path d="M9 6v20M9 7l12 3.5-12 3.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+        : sType === "패시브"
+        ? '<path d="M16 5l9 3.5v6.5c0 5.5-3.8 9.8-9 11.5-5.2-1.7-9-6-9-11.5V8.5L16 5z" stroke="currentColor" stroke-width="1.6" fill="none"/>'
+        : sType === "추격"
+        ? '<path d="M18 5L9 17h6l-1 10 9-12h-6l1-10z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/>'
+        : '<path d="M9 23L23 9M16 7l9 2-2 9M8 14l10 10" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+      const fontSize = size <= 24 ? 9 : (size <= 30 ? 10 : 12);
+      return `<div class="shrink-0 rounded-lg relative overflow-hidden flex items-center justify-center select-none" style="width:${size}px;height:${size}px;background:linear-gradient(145deg,${palette.bg2},${palette.bg1});border:1.5px solid ${palette.border};box-shadow:0 0 8px ${palette.glow};" title="${skName}${sType ? " (" + sType + ")" : ""}">
+        <svg viewBox="0 0 32 32" class="absolute inset-0 w-full h-full opacity-25" style="color:${palette.accent}">${typeGlyph}</svg>
+        <span class="relative z-10 font-black tracking-tighter leading-none" style="font-size:${fontSize}px;color:${palette.accent};text-shadow:0 1px 3px rgba(0,0,0,0.9);">${crest}</span>
+      </div>`;
+    }
+
     const koCmp = (a, b) => String(a || "").replace(/^[<>\[\]]+/, "").localeCompare(String(b || "").replace(/^[<>\[\]]+/, ""), "ko");
     const FAC_ORDER = { "위": 1, "촉": 2, "오": 3, "군웅": 4, "군": 4 };
     const TROOP_ORDER = { "방패병": 1, "창병": 2, "기병": 3, "궁병": 4 };
@@ -6265,7 +6421,9 @@
           const cat = getSkillCategory(sk.name);
           const meta = SKILL_CAT_META[cat];
           return `
-            <div class="panel p-3.5 space-y-1.5 ${meta.cardCls}">
+            <div class="panel p-3.5 flex items-start gap-3 ${meta.cardCls}">
+              ${getSkillIconHtml(sk.name, sk, 42)}
+              <div class="min-w-0 flex-1 space-y-1.5">
               <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   ${cat !== "normal" ? `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded border ${meta.badgeCls}">${meta.short}</span>` : ""}
@@ -6276,6 +6434,7 @@
                 <span class="text-xs text-slate-400 shrink-0">발동률 ${sk.rate}%</span>
               </div>
               <p class="text-xs text-slate-300 leading-relaxed">${sk.desc}</p>
+              </div>
             </div>
           `;
         };
@@ -6580,6 +6739,14 @@
                 <option value="중·저돌파" ${state.tierBtFilter === "중·저돌파" ? "selected" : ""}>중·저돌파 기준</option>
                 <option value="고·풀돌파" ${state.tierBtFilter === "고·풀돌파" ? "selected" : ""}>고·풀돌파 기준</option>
               </select>
+              <label class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-xs text-emerald-200 font-semibold cursor-pointer select-none">
+                <input type="checkbox" id="chkAutoOwnedOnly" class="accent-emerald-400" ${state.ownedOnlyFilter ? "checked" : ""} />
+                <span>보유 장수</span>
+              </label>
+              <label class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-sky-950/40 border border-sky-500/40 text-xs text-sky-200 font-semibold cursor-pointer select-none">
+                <input type="checkbox" id="chkAutoOwnedSkillsOnly" class="accent-sky-400" ${state.ownedSkillsOnlyFilter ? "checked" : ""} />
+                <span>보유 전법</span>
+              </label>
               <button id="btnAutoRecommend" class="btn-gold px-3.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5">
                 <i data-lucide="wand-2" class="w-3.5 h-3.5"></i> 조건별 1~5군 자동 추천
               </button>
@@ -6677,13 +6844,19 @@
         const aBt = document.getElementById("autoBtFilter");
         if (aSt) aSt.addEventListener("change", e => { state.tierStageFilter = e.target.value; });
         if (aBt) aBt.addEventListener("change", e => { state.tierBtFilter = e.target.value; });
+        const aOwn = document.getElementById("chkAutoOwnedOnly");
+        if (aOwn) aOwn.addEventListener("change", e => { state.ownedOnlyFilter = e.target.checked; });
+        const aOwnSk = document.getElementById("chkAutoOwnedSkillsOnly");
+        if (aOwnSk) aOwnSk.addEventListener("change", e => { state.ownedSkillsOnlyFilter = e.target.checked; });
         if (autoBtn) autoBtn.addEventListener("click", () => {
           const usedGenerals = new Set();
           const usedSkills = new Set();
           const filteredTier = state.tierDecks.filter(td => {
             const stOk = state.tierStageFilter === "all" || !td.stage || td.stage.includes(state.tierStageFilter);
             const btOk = state.tierBtFilter === "all" || !td.bt || td.bt === "모든 돌파" || td.bt === state.tierBtFilter;
-            return stOk && btOk;
+            const ownOk = !state.ownedOnlyFilter || td.members.every(m => state.ownedGenerals.includes(m.name));
+            const ownSkOk = !state.ownedSkillsOnlyFilter || td.members.every(m => (m.skills || []).every(s => getSkillCategory(s) === "innate" || state.ownedSkills.includes(s)));
+            return stOk && btOk && ownOk && ownSkOk;
           });
           const tierWeight = { "T0": 32, "T0.3": 35, "T0.5": 30, "T0.8": 24, "T1": 18, "T2": 8 };
           const ranked = filteredTier.map(td => {
@@ -6815,6 +6988,14 @@
                   <option value="중·저돌파" ${state.tierBtFilter === "중·저돌파" ? "selected" : ""}>중·저돌파</option>
                   <option value="고·풀돌파" ${state.tierBtFilter === "고·풀돌파" ? "selected" : ""}>고·풀돌파</option>
                 </select>
+                <label class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-xs text-emerald-200 font-semibold cursor-pointer select-none">
+                  <input type="checkbox" id="chkTierOwnedOnly" class="accent-emerald-400" ${state.ownedOnlyFilter ? "checked" : ""} />
+                  <span>보유 장수</span>
+                </label>
+                <label class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-sky-950/40 border border-sky-500/40 text-xs text-sky-200 font-semibold cursor-pointer select-none">
+                  <input type="checkbox" id="chkTierOwnedSkillsOnly" class="accent-sky-400" ${state.ownedSkillsOnlyFilter ? "checked" : ""} />
+                  <span>보유 전법</span>
+                </label>
                 <button id="btnOpenAddTier" class="btn-gold px-3.5 py-1.5 rounded-lg text-xs">+ 티어표 덱 직접 등록</button>
               </div>
             </div>
@@ -6823,7 +7004,9 @@
               ${state.tierDecks.map((td, tdIdx) => ({ td, tdIdx })).filter(({ td }) => {
                 const stOk = state.tierStageFilter === "all" || !td.stage || td.stage.includes(state.tierStageFilter);
                 const btOk = state.tierBtFilter === "all" || !td.bt || td.bt === "모든 돌파" || td.bt === state.tierBtFilter;
-                return stOk && btOk;
+                const ownOk = !state.ownedOnlyFilter || td.members.every(m => state.ownedGenerals.includes(m.name));
+                const ownSkOk = !state.ownedSkillsOnlyFilter || td.members.every(m => (m.skills || []).every(s => getSkillCategory(s) === "innate" || state.ownedSkills.includes(s)));
+                return stOk && btOk && ownOk && ownSkOk;
               }).map(({ td, tdIdx }) => {
                 let gHit = 0, sHit = 0, sTot = 0;
                 td.members.forEach(m => {
@@ -6979,6 +7162,10 @@
         const tBt = document.getElementById("tierBtSel");
         if (tSt) tSt.addEventListener("change", e => { state.tierStageFilter = e.target.value; renderTroops(); });
         if (tBt) tBt.addEventListener("change", e => { state.tierBtFilter = e.target.value; renderTroops(); });
+        const tOwn = document.getElementById("chkTierOwnedOnly");
+        if (tOwn) tOwn.addEventListener("change", e => { state.ownedOnlyFilter = e.target.checked; renderTroops(); });
+        const tOwnSk = document.getElementById("chkTierOwnedSkillsOnly");
+        if (tOwnSk) tOwnSk.addEventListener("change", e => { state.ownedSkillsOnlyFilter = e.target.checked; renderTroops(); });
         document.getElementById("btnOpenAddTier").addEventListener("click", () => {
           openModal(
             "티어표 덱 직접 등록",
@@ -7248,7 +7435,8 @@
             const has = state.ownedSkills.includes(name);
             const hasSimSk = state.skills.some(sk => sk.name === name);
             return `
-              <button data-sname="${name}" class="inv-s-btn px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition flex items-center gap-1.5 ${has ? meta.ownedCls : unownedCls[cat]}">
+              <button data-sname="${name}" class="inv-s-btn px-2 py-1.5 rounded-lg border text-xs font-semibold transition flex items-center gap-1.5 ${has ? meta.ownedCls : unownedCls[cat]}">
+                ${getSkillIconHtml(name, null, 24)}
                 <span>${has ? "✓" : "+"}</span>
                 <span>${name}</span>
                 ${!hasSimSk ? `<span class="text-[9px] px-1 rounded bg-rose-500/20 text-rose-300">미등록</span>` : ""}
@@ -7328,7 +7516,10 @@
             } else if (state.activeTroopsSubTab === "coexistence") {
         const coexTerms = (state.coexSearchQuery || "").trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
         const filteredSets = COEXISTENCE_SETS.filter(cs => {
-          return state.tierBtFilter === "all" || cs.bt === "모든 돌파" || cs.bt === state.tierBtFilter;
+          const btOk = state.tierBtFilter === "all" || cs.bt === "모든 돌파" || cs.bt === state.tierBtFilter;
+          const ownOk = !state.ownedOnlyFilter || cs.decks.every(d => d.members.every(m => state.ownedGenerals.includes(m.name)));
+          const ownSkOk = !state.ownedSkillsOnlyFilter || cs.decks.every(d => d.members.every(m => (m.skills || []).every(s => getSkillCategory(s) === "innate" || state.ownedSkills.includes(s))));
+          return btOk && ownOk && ownSkOk;
         });
         const scoredSets = filteredSets.map(cs => {
           let gTot = 0, gHit = 0, sTot = 0, sHit = 0;
@@ -7364,6 +7555,14 @@
                 <option value="중·저돌파" ${state.tierBtFilter === "중·저돌파" ? "selected" : ""}>중·저돌파용</option>
                 <option value="고·풀돌파" ${state.tierBtFilter === "고·풀돌파" ? "selected" : ""}>고·풀돌파용</option>
                 </select>
+                <label class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-xs text-emerald-200 font-semibold cursor-pointer select-none">
+                  <input type="checkbox" id="chkCoexOwnedOnly" class="accent-emerald-400" ${state.ownedOnlyFilter ? "checked" : ""} />
+                  <span>보유 장수</span>
+                </label>
+                <label class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-sky-950/40 border border-sky-500/40 text-xs text-sky-200 font-semibold cursor-pointer select-none">
+                  <input type="checkbox" id="chkCoexOwnedSkillsOnly" class="accent-sky-400" ${state.ownedSkillsOnlyFilter ? "checked" : ""} />
+                  <span>보유 전법</span>
+                </label>
               </div>
             </div>
 
@@ -7454,6 +7653,10 @@
           state.tierBtFilter = e.target.value;
           renderTroops();
         });
+        const cOwn = document.getElementById("chkCoexOwnedOnly");
+        if (cOwn) cOwn.addEventListener("change", e => { state.ownedOnlyFilter = e.target.checked; renderTroops(); });
+        const cOwnSk = document.getElementById("chkCoexOwnedSkillsOnly");
+        if (cOwnSk) cOwnSk.addEventListener("change", e => { state.ownedSkillsOnlyFilter = e.target.checked; renderTroops(); });
         container.querySelectorAll(".btn-apply-coex").forEach(btn => {
           btn.addEventListener("click", () => {
             const cs = COEXISTENCE_SETS.find(x => x.id === btn.dataset.coexid);
@@ -8025,6 +8228,13 @@
         showToast("아군과 적군 덱을 교체했습니다.");
       });
 
+      document.getElementById("btnResetSimDecks").addEventListener("click", () => {
+        state.decks = createEmptyDecks();
+        saveState();
+        renderBuilder();
+        showToast("아군·적군 편성을 모두 초기화했습니다.");
+      });
+
       function handleLoadPresetToSide(targetSide) {
         const val = document.getElementById("presetSelect").value;
         if (!val) return;
@@ -8080,14 +8290,27 @@
         showToast("전투 시뮬레이션 완료! 아래 결과를 확인하세요.");
       });
 
+      function hasBothTeamsReady() {
+        const aCnt = state.decks.ally.slots.filter(s => getGeneralOrNull(s.generalId)).length;
+        const eCnt = state.decks.enemy.slots.filter(s => getGeneralOrNull(s.generalId)).length;
+        if (!aCnt || !eCnt) {
+          showToast("아군과 적군에 각각 최소 1명 이상의 장수를 배치해 주세요.");
+          return false;
+        }
+        return true;
+      }
       document.getElementById("btnRunSingle").addEventListener("click", () => {
+        if (!hasBothTeamsReady()) return;
         document.getElementById("batchSummaryCard").classList.add("hidden");
         const maxT = Number(document.getElementById("maxTurnsInput").value) || 8;
         renderBattleResult(runBattleSimulation(maxT));
         showToast("전투 시뮬레이션 완료!");
       });
 
-      document.getElementById("btnRunBatch").addEventListener("click", () => runBatchSimulation(100));
+      document.getElementById("btnRunBatch").addEventListener("click", () => {
+        if (!hasBothTeamsReady()) return;
+        runBatchSimulation(100);
+      });
       document.getElementById("btnBackToBuilder").addEventListener("click", () => document.getElementById("tab-builder").scrollIntoView({ behavior: "smooth", block: "start" }));
 
       document.querySelectorAll("#troopsSubTabs .tsub-tab").forEach(btn => {
