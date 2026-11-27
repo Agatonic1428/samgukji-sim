@@ -1609,7 +1609,8 @@
       { id: "hwangsil_inyeon", name: "황실의 인연", minCount: 2, memberNames: ["유비", "감부인"], desc: "부대 내 인연 무장이 받는 병기 피해가 6% 감소한다." },
       { id: "soyeol_seungsa", name: "소열승사", minCount: 2, memberNames: ["유선", "감부인", "유비"], desc: "부대 내 인연 무장이 받는 피해가 6% 감소한다." },
       { id: "nanse_uiji", name: "난세의 의지", minCount: 2, memberNames: ["미부인", "유비"], desc: "부대 내 인연 무장이 받는 책략 피해가 6% 감소한다." },
-      { id: "soyeolje", name: "소열제", minCount: 1, memberNames: ["유비"], desc: "등극 시즌 기간에 아군 전체의 활성화한 진영 보너스-[촉] 효과가 50% 증가한다." }
+      { id: "soyeolje", name: "소열제", minCount: 1, memberNames: ["유비"], desc: "등극 시즌 기간에 아군 전체의 활성화한 진영 보너스-[촉] 효과가 50% 증가한다." },
+      { id: "ohosangjang", name: "오호상장", minCount: 3, memberNames: ["관우", "장비", "조운", "마초", "황충"], desc: "관우·장비·조운·마초·황충 중 3명 편성 시 활성화 (전투 데이터 #5 확인)" }
     ];
     function matchBondMember(b, g) {
       if (!b || !g) return false;
@@ -1650,6 +1651,14 @@
         result: "아군 패배 (8턴)",
         summary: "아군 42 황보숭·주준·원술 (20,368 / 총 처치 25,599 / 총 치유 2,681 / 궤멸) vs 적군 45 등애·이유·우금 (36,000 → 18,825 / 등애 둔전령 치유 8,424 / 이유 18,410 폭딜)",
         addedAt: "4회차 제공 데이터"
+      },
+      {
+        id: "record_5",
+        index: 5,
+        title: "구찌집사(49 남만제갈 안형진) vs LV12 토지 수비군 2연전 (하후돈·등애·정욱 / 조운·장비·마초 어린진·오호상장)",
+        result: "아군 연전 완승 (2부대 7턴)",
+        summary: "아군 49 축융부인·맹획·SP제갈량 (27,000 → 23,113 / 총 손실 3,052) vs LV12 수비군 1부대(50 하후돈·등애·정욱 48,000 궤멸, 손실 14,195) & 2부대(50 조운·장비·마초 48,000 궤멸, 손실 11,682 | 축융 20,801·제갈 18,204·맹획 11,825 처치 / 보보위영 11회·금성의 철벽 13회 / 조운 피신 7회·칠진칠출 7회)",
+        addedAt: "5회차 제공 데이터"
       }
     ];
 
@@ -2253,13 +2262,24 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v55";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v56";
 
     const UPDATE_LOGS = [
       {
+        version: "v1.50",
+        date: "2026.11.27",
+        badge: "최신",
+        title: "전투 데이터 #5 추가 (49 남만제갈 vs LV12 토지 수비군 2연전 완승, 누적 5건)",
+        items: [
+          "전투 데이터 #5 등록: 구찌집사(49 축융부인·맹획·SP제갈량 27,000) vs LV12 토지 수비군 1부대(50 하후돈·등애·정욱 48,000) & 2부대(50 조운·장비·마초 48,000) 2연전 완승 (총 손실 3,052)",
+          "2부대 7턴 상세 통계 반영: 아군 총 처치 50,830(축융 20,801·제갈 18,204·맹획 11,825), 치유 5,627(축융 4,970·침략방어 657), 방어 14회(보보위영 11회·금성의 철벽 13회), 조운 피신 7회·칠진칠출 7회 연동 확인",
+          "실전 로그 검증 반영: [오호상장] 인연 추가(총 18종), [피신] 효과가 일반 공격뿐 아니라 전법 피해(남방의 칼날 등)도 회피하도록 전투 엔진 보정, 진영 보너스(2인 +5% / 3인 +10%) 재확인"
+        ]
+      },
+      {
         version: "v1.49",
         date: "2026.11.26",
-        badge: "최신",
+        badge: "",
         title: "필요 데이터 모달의 장비·말 특기/이펙트 현황 실시간 자동 집계로 수정",
         items: [
           "필요 데이터 모달 5번 항목의 예전 고정 안내 문구를 제거하고, 실제 등록된 장비(67종)·장비 특기(34종)·장비 이펙트(17종)·말(24종)·말 특기(16종)·말 이펙트(15종) 개수를 실시간 자동 표시하도록 수정"
@@ -3858,9 +3878,9 @@
           (attacker.strategies.includes("hoik_su") && Math.random() < 0.667) || (attacker.strategies.includes("hoik_jan") && Math.random() < 0.533)
         );
         const effEvade = (target.evadeRate || 0) + (target.evade || 0) + target.tempBuffs.reduce((s, b) => s + (b.evadeAdd || 0), 0);
-        if (opts.isNormal && !hoikIgnore && effEvade > 0 && Math.random() * 100 < effEvade) {
+        if (!hoikIgnore && effEvade > 0 && Math.random() * 100 < effEvade) {
           target.evadeCountThisTurn++;
-          addLog(currentTurn, attacker.side, `${nameTag(target)} 피신 발동! ${nameTag(attacker)}의 일반 공격 회피`);
+          addLog(currentTurn, attacker.side, `${nameTag(target)} 피신 발동! ${nameTag(attacker)}의 ${opts.isNormal ? "일반 공격" : opts.source} 회피`);
           return 0;
         }
 
