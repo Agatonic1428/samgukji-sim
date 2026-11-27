@@ -2277,14 +2277,24 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v71";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v72";
     const USER_OWNED_KEY = "samgukji_user_owned_persist_v1";
 
     const UPDATE_LOGS = [
       {
-        version: "v1.65",
+        version: "v1.66",
         date: "2026.11.27",
         badge: "최신",
+        title: "대체 전법 모의 전투 승률·잔여 병력·피해량 0 표시 버그 수정 (<기임> 선본 엔진 오류 해결)",
+        items: [
+          "전투 엔진 내 [<기임> 선본] 1턴 조롱 처리 중 발생하던 참조 오류(enemyTeam)를 수정해, <기임> 보유 티어덱과의 모의 전투가 정상 완료되도록 조치",
+          "대체 전법 모의 전투 집계 시 아군 처치량(totalKills)이 정상 반영되도록 수정해 승률·평균 잔여 병력·피해량·치유량이 모두 정확한 수치로 표시"
+        ]
+      },
+      {
+        version: "v1.65",
+        date: "2026.11.27",
+        badge: "",
         title: "대체 전법 모의 전투 검증 상대를 실제 등록된 상위 티어덱 4종으로 고도화",
         items: [
           "대체 전법 선정 시 임시 NPC 상대가 아닌, 실제 등록된 상위 티어덱 4종(T0·T0.3·T0.5 등)과 직접 모의 전투를 돌려 종합 승률·잔여 병력·피해/치유 이득이 가장 높은 전법을 선정하도록 고도화",
@@ -4704,7 +4714,7 @@
 
           // <기임> 선본 (turn 1: 적군 전체 1턴 조롱)
           if (t === 1 && u.strategies.includes("giim_seon")) {
-            const livingEnemies = enemyTeam.filter(e => e.troops > 0);
+            const livingEnemies = getEnemies(u.side).filter(e => e.troops > 0);
             livingEnemies.forEach(e => {
               e.debuffs.tauntBy = u.uid;
               e.debuffs.tauntTurns = Math.max(e.debuffs.tauntTurns, 1);
@@ -7169,7 +7179,7 @@
                   const res = runBattleSimulation(8);
                   if (res.winner === "ally") wins++;
                   totalRemain += res.allyUnits.reduce((s, u) => s + Math.max(0, u.troops), 0);
-                  totalDmg += res.allyUnits.reduce((s, u) => s + (u.totalDmg || 0), 0);
+                  totalDmg += res.allyUnits.reduce((s, u) => s + (u.totalKills || 0), 0);
                   totalHeal += res.allyUnits.reduce((s, u) => s + (u.totalHeal || 0), 0);
                   totalRuns++;
                 }
