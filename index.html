@@ -1625,7 +1625,9 @@
       { id: "soyeol_seungsa", name: "소열승사", minCount: 2, memberNames: ["유선", "감부인", "유비"], desc: "부대 내 인연 무장이 받는 피해가 6% 감소한다." },
       { id: "nanse_uiji", name: "난세의 의지", minCount: 2, memberNames: ["미부인", "유비"], desc: "부대 내 인연 무장이 받는 책략 피해가 6% 감소한다." },
       { id: "soyeolje", name: "소열제", minCount: 1, memberNames: ["유비"], desc: "등극 시즌 기간에 아군 전체의 활성화한 진영 보너스-[촉] 효과가 50% 증가한다." },
-      { id: "ohosangjang", name: "오호상장", minCount: 3, memberNames: ["관우", "장비", "조운", "마초", "황충"], desc: "관우·장비·조운·마초·황충 중 3명 편성 시 활성화 (전투 데이터 #5 확인)" }
+      { id: "ohosangjang", name: "오호상장", minCount: 3, memberNames: ["관우", "장비", "조운", "마초", "황충"], desc: "관우·장비·조운·마초·황충 중 3명 편성 시 활성화 (전투 데이터 #5 확인)" },
+      { id: "hullyunghan_mobeom", name: "훌륭한 모범", minCount: 2, memberNames: ["변부인", "조비"], desc: "부대 내 인연 무장이 첫 3턴 동안 받는 병기 피해가 15% 감소한다." },
+      { id: "muhwang_seonhu", name: "무황과 선후", minCount: 2, memberNames: ["변부인", "조조"], desc: "부대 내 인연 무장이 초반 3턴까지 받는 책략 피해가 15% 감소한다." }
     ];
     function matchBondMember(b, g) {
       if (!b || !g) return false;
@@ -1674,6 +1676,14 @@
         result: "아군 연전 완승 (2부대 7턴)",
         summary: "아군 49 축융부인·맹획·SP제갈량 (27,000 → 23,113 / 총 손실 3,052) vs LV12 수비군 1부대(50 하후돈·등애·정욱 48,000 궤멸, 손실 14,195) & 2부대(50 조운·장비·마초 48,000 궤멸, 손실 11,682 | 축융 20,801·제갈 18,204·맹획 11,825 처치 / 보보위영 11회·금성의 철벽 13회 / 조운 피신 7회·칠진칠출 7회)",
         addedAt: "5회차 제공 데이터"
+      },
+      {
+        id: "record_6",
+        index: 6,
+        title: "구찌집사(50 사마의·변부인·조비 안형진) vs 돼지꼬리(50 풀돌 남만제갈 안형진) [PvP]",
+        result: "아군 패배 (6턴 · 무훈 +687)",
+        summary: "아군 50 사마의·변부인·조비 (28,200 → 0 / 손실 13,335 · 총 처치 13,860 · 총 치유 13,572 | 사마의 심연의 잠룡 4턴 폭발 5,218·훗날의 교훈 4,459/치유 2,002·매의 응시 3,524 / 변부인 검소한 소복 11회·방어 9회·위의 출정 2,314 / 조비 침략 방어 4턴 3,674·군자의 복수 9회) vs 적군 50 풀돌 축융부인·맹획·SP제갈량 (30,000 → 26,494 / 손실 2,964 | 축융 15,180·치유 9,672·치명타 19회 / 맹획 17,565·보보위영 11회 / 제갈량 성운 대열 병기피해 8,564·조롱 3명)",
+        addedAt: "6회차 제공 데이터 (PvP)"
       }
     ];
 
@@ -1697,7 +1707,7 @@
       "자오의 묘책", "천군돌파", "불굴의 의지", "세금 과징수", "결사 돌진",
       "난세의 간웅", "화소연영", "유인전", "강렬", "폐월", "인재 등용", "범의 포효", "화하 진압", "칠군수몰",
       "백성과 함께", "완벽한 사격", "둔전령", "사생결의", "중원 토벌",
-      "천하평론", "기선제압", "적시의 행동"
+      "천하평론", "기선제압", "적시의 행동", "위의 출정"
     ];
 
     const INITIAL_MY_TROOPS = [
@@ -2277,14 +2287,35 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v74";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v76";
     const USER_OWNED_KEY = "samgukji_user_owned_persist_v1";
 
     const UPDATE_LOGS = [
       {
-        version: "v1.68",
+        version: "v1.70",
         date: "2026.11.27",
         badge: "최신",
+        title: "신규 무장 인연 2종 추가 (훌륭한 모범 · 무황과 선후 / 총 20종)",
+        items: [
+          "[훌륭한 모범] (변부인·조비 2인): 부대 내 인연 무장이 첫 3턴 동안 받는 병기 피해 15% 감소 — 도감 및 전투 엔진 반영",
+          "[무황과 선후] (변부인·조조 2인): 부대 내 인연 무장이 초반 3턴까지 받는 책략 피해 15% 감소 — 도감 및 전투 엔진 반영"
+        ]
+      },
+      {
+        version: "v1.69",
+        date: "2026.11.27",
+        badge: "",
+        title: "실제 PvP 전투 데이터 6회차 반영 (사마의·변부인·조비 vs 풀돌 남만제갈) 및 침략 방어 4턴 치유량 실측 보정",
+        items: [
+          "6회차 PvP 전황 [구찌집사(50 사마의·변부인·조비 안형진) vs 돼지꼬리(50 풀돌 축융·맹획·SP제갈량 안형진), 6턴 패배] 전투 기록 등록 (누적 전투 데이터 6건)",
+          "4턴 [침략 방어] 전체 회복량을 실제 PvP 로그(조비 지력 200 기준 합계 3,674 치유)에 맞춰 정밀 보정",
+          "사마의 [심연의 잠룡] 4턴 광역 폭발(5,218), 변부인 [검소한 소복] 11회·방어 9회, 제갈량 [성운 대열] 이중 전열 병기 피해(8,564)·조롱 3명, 축융 5턴 대량 치유(9,672) 패턴 교차 검증 완료"
+        ]
+      },
+      {
+        version: "v1.68",
+        date: "2026.11.27",
+        badge: "",
         title: "대체 전법 안내 툴팁을 1순위·2순위 카드형 레이아웃으로 통일 개선",
         items: [
           "1~5군 추천 조합의 시안색 [대체] 전법 호버 툴팁을 미보유 전법 대체 추천과 동일한 깔끔한 카드형 레이아웃으로 개편",
@@ -3541,6 +3572,12 @@
             } else if (b.id === "hwangsil_inyeon") {
               members.forEach(u => addDmgRed(u, 6, "physDmgRed"));
               addLog(0, side, `${nameTag(leader)} 부대 【인연-황실의 인연】 발동: 인연 무장 받는 병기 피해 6% 감소`);
+            } else if (b.id === "hullyunghan_mobeom") {
+              members.forEach(u => u.tempBuffs.push({ name: "인연-훌륭한 모범", turns: 3, physDmgRed: 15 }));
+              addLog(0, side, `${nameTag(leader)} 부대 【인연-훌륭한 모범】 발동: 변부인·조비 첫 3턴 받는 병기 피해 15% 감소`);
+            } else if (b.id === "muhwang_seonhu") {
+              members.forEach(u => u.tempBuffs.push({ name: "인연-무황과 선후", turns: 3, stratDmgRed: 15 }));
+              addLog(0, side, `${nameTag(leader)} 부대 【인연-무황과 선후】 발동: 변부인·조조 초반 3턴 받는 책략 피해 15% 감소`);
             } else if (b.id === "gyeokdong_inyeon") {
               members.forEach(u => { u.normalDmgRed += 12; u.chaseDmgRed = (u.chaseDmgRed || 0) + 12; });
               addLog(0, side, `${nameTag(leader)} 부대 【인연-격동의 인연】 발동: 인연 무장 받는 일반공격·추격피해 12% 감소`);
@@ -4772,7 +4809,7 @@
 
           // 침략 방어 (4번째 턴 시작 시 전체 아군 회복)
           if (t === 4 && u.skills.includes("chimryak")) {
-            const healBase = Math.sqrt(u.troops) * 3.6 * (effIntel(u) / 140) * 1.1;
+            const healBase = Math.sqrt(u.troops) * 10.5 * (effIntel(u) / 140) * 1.1; // 6회차 PvP 실측 보정(조비 지력200 4턴 합계 3,674)
             addLog(t, u.side, `${nameTag(u)} 【침략 방어】 4턴 전체 회복 발동!`);
             myTeam.forEach(a => applyHeal(u, a, healBase, "침략 방어", false));
           }
