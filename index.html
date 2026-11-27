@@ -2265,13 +2265,42 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v63";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v66";
+    const USER_OWNED_KEY = "samgukji_user_owned_persist_v1";
 
     const UPDATE_LOGS = [
       {
-        version: "v1.57",
+        version: "v1.60",
         date: "2026.11.27",
         badge: "최신",
+        title: "업데이트 시 보유 장수·보유 전법 체크 상태 영구 보존 적용",
+        items: [
+          "유저가 체크한 보유 장수·보유 전법 목록을 별도 영구 저장소(USER_OWNED_KEY)에 분리 저장해, 사이트가 새 버전으로 업데이트되어도 체크한 목록이 절대 풀리거나 초기화되지 않도록 개선"
+        ]
+      },
+      {
+        version: "v1.59",
+        date: "2026.11.27",
+        badge: "",
+        title: "보유 장수·보유 전법 탭에 [전체 선택]·[전체 해제] 버튼 추가",
+        items: [
+          "1. 보유 장수 및 2. 보유 전법 상단에 [전체 선택]·[전체 해제] 원클릭 버튼을 추가해 다른 유저도 자신의 보유 현황을 빠르게 세팅할 수 있도록 개선"
+        ]
+      },
+      {
+        version: "v1.58",
+        date: "2026.11.27",
+        badge: "",
+        title: "1~5군 추천 보유 장수 단독 체크 시 중복 전법 자동 대체 개선 & 공존덱 필터 제거",
+        items: [
+          "★ 1~5군 추천 조합에서 [보유 장수]만 체크하고 추천 시 1군과 전법이 1개만 겹쳐도 2~5군이 통째로 제외되던 문제 해결(미사용 동일 역할 전법으로 자동 대체해 1~5군 최대한 구성)",
+          "4. 공존덱 세트 탭에서 [보유 장수]·[보유 전법] 체크박스를 제거해 전체 공존덱 세트가 원본 그대로 표시되도록 복원"
+        ]
+      },
+      {
+        version: "v1.57",
+        date: "2026.11.27",
+        badge: "",
         title: "자동 추천 부대 장수 초상화·진영·병종 표시 복구",
         items: [
           "★ 1~5군 자동 추천 실행 시 장수 초상화·진영·병종·레벨 정보가 정상 표시되도록 즉시 복구 및 카드 렌더링 안전장치 추가"
@@ -2958,11 +2987,22 @@
           ownedSkills: state.ownedSkills
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+        localStorage.setItem(USER_OWNED_KEY, JSON.stringify({
+          ownedGenerals: state.ownedGenerals,
+          ownedSkills: state.ownedSkills
+        }));
       } catch (e) {}
     }
 
     function loadState() {
       try {
+        // 버전 업데이트로 STORAGE_KEY가 바뀌어도 유저가 체크한 보유 장수·전법은 영구 유지
+        const ownedRaw = localStorage.getItem(USER_OWNED_KEY);
+        if (ownedRaw) {
+          const op = JSON.parse(ownedRaw);
+          if (Array.isArray(op.ownedGenerals)) state.ownedGenerals = op.ownedGenerals;
+          if (Array.isArray(op.ownedSkills)) state.ownedSkills = op.ownedSkills.filter(n => getSkillCategory(n) !== "innate");
+        }
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return;
         const parsed = JSON.parse(raw);
@@ -6888,11 +6928,14 @@
             return { td, score };
           }).sort((a, b) => b.score - a.score);
 
-          const pickOwnedFallbackSkill = (origName, usedSet, candSet) => {
+          const pickFallbackSkill = (origName, usedSet, candSet, ownedOnly) => {
             const origObj = state.skills.find(x => x.name === origName);
             const origTag = (origObj?.tag || "");
             const origType = (origObj?.type || "");
-            const pool = state.ownedSkills.filter(n =>
+            const rawPool = ownedOnly
+              ? state.ownedSkills
+              : Array.from(new Set([...state.ownedSkills, ...state.skills.map(s => s.name)]));
+            const pool = rawPool.filter(n =>
               getSkillCategory(n) !== "innate" && !usedSet.has(n) && !candSet.has(n)
             );
             if (!pool.length) return null;
@@ -6940,19 +6983,16 @@
                     resolvedSk.push(alt);
                     candidateSkills.add(alt);
                     swappedNotes.push(`${m.name}: ${sk}→${alt} 대체`);
-                  } else if (state.ownedSkillsOnlyFilter) {
-                    const sub = pickOwnedFallbackSkill(sk, usedSkills, candidateSkills);
+                  } else {
+                    const sub = pickFallbackSkill(sk, usedSkills, candidateSkills, state.ownedSkillsOnlyFilter);
                     if (sub) {
                       resolvedSk.push(sub);
                       candidateSkills.add(sub);
-                      swappedNotes.push(`${m.name}: ${sk}→${sub}(보유 대체)`);
+                      swappedNotes.push(`${m.name}: ${sk}→${sub}(${state.ownedSkillsOnlyFilter ? "보유 대체" : "중복 대체"})`);
                     } else {
                       skillConflict = true;
                       break;
                     }
-                  } else {
-                    skillConflict = true;
-                    break;
                   }
                 }
               }
@@ -7298,6 +7338,8 @@
                 <p class="text-xs text-slate-400 mt-0.5">보유 중인 장수를 검색·클릭해 선택/해제하세요. 티어표 충족률과 1~5군 추천에 즉시 반영됩니다.</p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
+                <button id="btnSelectAllOwnedG" type="button" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/40 text-emerald-200 text-xs font-semibold">전체 선택</button>
+                <button id="btnClearAllOwnedG" type="button" class="px-2.5 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/30 border border-rose-400/40 text-rose-200 text-xs font-semibold">전체 해제</button>
                 <select id="sortOwnedG" class="form-select !w-auto !py-1.5 !text-xs">
                   <option value="name" ${ogSort === "name" ? "selected" : ""}>정렬: 이름순 (가나다)</option>
                   <option value="faction" ${ogSort === "faction" ? "selected" : ""}>정렬: 나라(진영)순</option>
@@ -7414,6 +7456,24 @@
             renderMissingDataBadge();
           }));
         };
+        const selAllG = document.getElementById("btnSelectAllOwnedG");
+        if (selAllG) selAllG.addEventListener("click", () => {
+          state.ownedGenerals = [...allGNames];
+          saveState();
+          document.getElementById("ownedGCountTxt").textContent = state.ownedGenerals.length;
+          renderGGrid(document.getElementById("searchOwnedG").value);
+          renderMissingDataBadge();
+          showToast(`전체 장수 ${state.ownedGenerals.length}명을 선택했습니다.`);
+        });
+        const clrAllG = document.getElementById("btnClearAllOwnedG");
+        if (clrAllG) clrAllG.addEventListener("click", () => {
+          state.ownedGenerals = [];
+          saveState();
+          document.getElementById("ownedGCountTxt").textContent = "0";
+          renderGGrid(document.getElementById("searchOwnedG").value);
+          renderMissingDataBadge();
+          showToast("보유 장수 선택을 모두 해제했습니다.");
+        });
         const sOG = document.getElementById("sortOwnedG");
         if (sOG) sOG.addEventListener("change", e => { state.ownedGenSort = e.target.value; renderTroops(); });
         renderGGrid("");
@@ -7450,6 +7510,8 @@
                 <p class="text-xs text-slate-400 mt-0.5">학습·장착 가능한 전법만 선택합니다. 장수 고유 전법은 장수 배치 시 자동 적용되므로 제외되었으며, 미등록 고유 전법은 상단 <strong class="text-rose-300">필요 데이터</strong>에서 확인할 수 있습니다.</p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
+                <button id="btnSelectAllOwnedS" type="button" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/40 text-emerald-200 text-xs font-semibold">전체 선택</button>
+                <button id="btnClearAllOwnedS" type="button" class="px-2.5 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/30 border border-rose-400/40 text-rose-200 text-xs font-semibold">전체 해제</button>
                 <select id="sortOwnedS" class="form-select !w-auto !py-1.5 !text-xs">
                   <option value="name" ${osSort === "name" ? "selected" : ""}>정렬: 이름순 (가나다)</option>
                   <option value="category" ${osSort === "category" ? "selected" : ""}>정렬: 분류순 (진영·영본·일반)</option>
@@ -7555,6 +7617,24 @@
             renderMissingDataBadge();
           }));
         };
+        const selAllS = document.getElementById("btnSelectAllOwnedS");
+        if (selAllS) selAllS.addEventListener("click", () => {
+          state.ownedSkills = [...allSNames];
+          saveState();
+          document.getElementById("ownedSCountTxt").textContent = state.ownedSkills.length;
+          renderSList(document.getElementById("searchOwnedS").value);
+          renderMissingDataBadge();
+          showToast(`전체 전법 ${state.ownedSkills.length}개를 선택했습니다.`);
+        });
+        const clrAllS = document.getElementById("btnClearAllOwnedS");
+        if (clrAllS) clrAllS.addEventListener("click", () => {
+          state.ownedSkills = [];
+          saveState();
+          document.getElementById("ownedSCountTxt").textContent = "0";
+          renderSList(document.getElementById("searchOwnedS").value);
+          renderMissingDataBadge();
+          showToast("보유 전법 선택을 모두 해제했습니다.");
+        });
         const sOS = document.getElementById("sortOwnedS");
         if (sOS) sOS.addEventListener("change", e => { state.ownedSkillSort = e.target.value; renderTroops(); });
         renderSList("");
@@ -7570,10 +7650,7 @@
             } else if (state.activeTroopsSubTab === "coexistence") {
         const coexTerms = (state.coexSearchQuery || "").trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
         const filteredSets = COEXISTENCE_SETS.filter(cs => {
-          const btOk = state.tierBtFilter === "all" || cs.bt === "모든 돌파" || cs.bt === state.tierBtFilter;
-          const ownOk = !state.ownedOnlyFilter || cs.decks.every(d => d.members.every(m => state.ownedGenerals.includes(m.name)));
-          const ownSkOk = !state.ownedSkillsOnlyFilter || cs.decks.every(d => d.members.every(m => (m.skills || []).every(s => getSkillCategory(s) === "innate" || state.ownedSkills.includes(s))));
-          return btOk && ownOk && ownSkOk;
+          return state.tierBtFilter === "all" || cs.bt === "모든 돌파" || cs.bt === state.tierBtFilter;
         });
         const scoredSets = filteredSets.map(cs => {
           let gTot = 0, gHit = 0, sTot = 0, sHit = 0;
@@ -7609,14 +7686,6 @@
                 <option value="중·저돌파" ${state.tierBtFilter === "중·저돌파" ? "selected" : ""}>중·저돌파용</option>
                 <option value="고·풀돌파" ${state.tierBtFilter === "고·풀돌파" ? "selected" : ""}>고·풀돌파용</option>
                 </select>
-                <label class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-xs text-emerald-200 font-semibold cursor-pointer select-none">
-                  <input type="checkbox" id="chkCoexOwnedOnly" class="accent-emerald-400" ${state.ownedOnlyFilter ? "checked" : ""} />
-                  <span>보유 장수</span>
-                </label>
-                <label class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-sky-950/40 border border-sky-500/40 text-xs text-sky-200 font-semibold cursor-pointer select-none">
-                  <input type="checkbox" id="chkCoexOwnedSkillsOnly" class="accent-sky-400" ${state.ownedSkillsOnlyFilter ? "checked" : ""} />
-                  <span>보유 전법</span>
-                </label>
               </div>
             </div>
 
@@ -7707,10 +7776,7 @@
           state.tierBtFilter = e.target.value;
           renderTroops();
         });
-        const cOwn = document.getElementById("chkCoexOwnedOnly");
-        if (cOwn) cOwn.addEventListener("change", e => { state.ownedOnlyFilter = e.target.checked; renderTroops(); });
-        const cOwnSk = document.getElementById("chkCoexOwnedSkillsOnly");
-        if (cOwnSk) cOwnSk.addEventListener("change", e => { state.ownedSkillsOnlyFilter = e.target.checked; renderTroops(); });
+
         container.querySelectorAll(".btn-apply-coex").forEach(btn => {
           btn.addEventListener("click", () => {
             const cs = COEXISTENCE_SETS.find(x => x.id === btn.dataset.coexid);
