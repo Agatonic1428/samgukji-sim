@@ -2265,13 +2265,23 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v61";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v62";
 
     const UPDATE_LOGS = [
       {
-        version: "v1.55",
+        version: "v1.56",
         date: "2026.11.27",
         badge: "최신",
+        title: "[보유 장수 + 보유 전법] 자동 추천 시 미보유 전법 자동 대체 로직 개선",
+        items: [
+          "★ 1~5군 추천 조합에서 [보유 장수]·[보유 전법]을 모두 체크하고 자동 추천 시, 티어표 원본 전법 1~2개가 미보유여도 덱 전체를 제외하지 않고 같은 역할(태그·유형)의 미사용 보유 전법으로 자동 대체해 1~5군을 최대한 구성하도록 개선",
+          "대체된 전법은 부대 상단 메모에 [장수명: 원본→대체전법(보유 대체)] 형태로 투명하게 표시"
+        ]
+      },
+      {
+        version: "v1.55",
+        date: "2026.11.27",
+        badge: "",
         title: "전법 전용 아이콘 이미지 추가 & 시뮬레이터 실제 2×3 진형 배치도(좌·중·우) 개편",
         items: [
           "전법 도감 및 보유 전법 목록에 분류(고유·진영·영본·일반)와 발동유형(지휘·패시브·액티브·추격)별 전용 전법 아이콘 이미지 추가",
@@ -6855,20 +6865,43 @@
             const stOk = state.tierStageFilter === "all" || !td.stage || td.stage.includes(state.tierStageFilter);
             const btOk = state.tierBtFilter === "all" || !td.bt || td.bt === "모든 돌파" || td.bt === state.tierBtFilter;
             const ownOk = !state.ownedOnlyFilter || td.members.every(m => state.ownedGenerals.includes(m.name));
-            const ownSkOk = !state.ownedSkillsOnlyFilter || td.members.every(m => (m.skills || []).every(s => getSkillCategory(s) === "innate" || state.ownedSkills.includes(s)));
-            return stOk && btOk && ownOk && ownSkOk;
+            return stOk && btOk && ownOk;
           });
           const tierWeight = { "T0": 32, "T0.3": 35, "T0.5": 30, "T0.8": 24, "T1": 18, "T2": 8 };
           const ranked = filteredTier.map(td => {
             let gHit = 0, sHit = 0, sTot = 0;
             td.members.forEach(m => {
               if (state.ownedGenerals.includes(m.name)) gHit++;
-              (m.skills || []).forEach(sk => { sTot++; if (state.ownedSkills.includes(sk)) sHit++; });
+              (m.skills || []).forEach(sk => { sTot++; if (getSkillCategory(sk) === "innate" || state.ownedSkills.includes(sk)) sHit++; });
             });
-            // 미보유 장수는 뽑으면 되므로 추천 허용, 보유율 + 티어 가중치로 우선순위 결정
-            const score = (gHit / Math.max(1, td.members.length)) * 50 + (sHit / Math.max(1, sTot)) * 20 + (tierWeight[td.tier] || 10);
+            const skWeight = state.ownedSkillsOnlyFilter ? 45 : 20;
+            const score = (gHit / Math.max(1, td.members.length)) * 50 + (sHit / Math.max(1, sTot)) * skWeight + (tierWeight[td.tier] || 10);
             return { td, score };
           }).sort((a, b) => b.score - a.score);
+
+          const pickOwnedFallbackSkill = (origName, usedSet, candSet) => {
+            const origObj = state.skills.find(x => x.name === origName);
+            const origTag = (origObj?.tag || "");
+            const origType = (origObj?.type || "");
+            const pool = state.ownedSkills.filter(n =>
+              getSkillCategory(n) !== "innate" && !usedSet.has(n) && !candSet.has(n)
+            );
+            if (!pool.length) return null;
+            // 1) 같은 태그(치유/방어/제어/책략/병기 등) 우선
+            const tagTokens = origTag.split(/[·,/\s]+/).filter(Boolean);
+            const byTag = pool.find(n => {
+              const o = state.skills.find(x => x.name === n);
+              return o && tagTokens.some(tk => (o.tag || "").includes(tk));
+            });
+            if (byTag) return byTag;
+            // 2) 같은 발동 유형(지휘/패시브/액티브/추격) 우선
+            const byType = pool.find(n => {
+              const o = state.skills.find(x => x.name === n);
+              return o && origType && o.type === origType;
+            });
+            if (byType) return byType;
+            return pool[0];
+          };
 
           let filled = 0;
           for (const item of ranked) {
@@ -6885,15 +6918,29 @@
             for (const m of item.td.members) {
               const resolvedSk = [];
               for (const sk of (m.skills || [])) {
-                if (!usedSkills.has(sk) && !candidateSkills.has(sk)) {
+                const isOwnedOk = !state.ownedSkillsOnlyFilter || getSkillCategory(sk) === "innate" || state.ownedSkills.includes(sk);
+                if (isOwnedOk && !usedSkills.has(sk) && !candidateSkills.has(sk)) {
                   resolvedSk.push(sk);
                   candidateSkills.add(sk);
                 } else {
-                  const alt = (m.altSkills || []).find(a => !usedSkills.has(a) && !candidateSkills.has(a));
+                  const alt = (m.altSkills || []).find(a =>
+                    (!state.ownedSkillsOnlyFilter || state.ownedSkills.includes(a)) &&
+                    !usedSkills.has(a) && !candidateSkills.has(a)
+                  );
                   if (alt) {
                     resolvedSk.push(alt);
                     candidateSkills.add(alt);
                     swappedNotes.push(`${m.name}: ${sk}→${alt} 대체`);
+                  } else if (state.ownedSkillsOnlyFilter) {
+                    const sub = pickOwnedFallbackSkill(sk, usedSkills, candidateSkills);
+                    if (sub) {
+                      resolvedSk.push(sub);
+                      candidateSkills.add(sub);
+                      swappedNotes.push(`${m.name}: ${sk}→${sub}(보유 대체)`);
+                    } else {
+                      skillConflict = true;
+                      break;
+                    }
                   } else {
                     skillConflict = true;
                     break;
@@ -6901,17 +6948,7 @@
                 }
               }
               if (skillConflict) break;
-              const foundG = state.generals.find(g => g.name === m.name);
-              resolvedMembers.push({
-                name: m.name,
-                faction: foundG ? foundG.faction : "",
-                troopType: foundG ? foundG.troopType : "",
-                level: foundG ? foundG.level : "",
-                pos: m.pos,
-                portrait: foundG ? foundG.portrait : "",
-                skills: resolvedSk,
-                strategies: [...(m.strategies || [])]
-              });
+              resolvedMembers.push({ ...m, skills: resolvedSk });
             }
             if (skillConflict) continue;
 
