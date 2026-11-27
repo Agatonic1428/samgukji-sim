@@ -2277,14 +2277,25 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v72";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v73";
     const USER_OWNED_KEY = "samgukji_user_owned_persist_v1";
 
     const UPDATE_LOGS = [
       {
-        version: "v1.66",
+        version: "v1.67",
         date: "2026.11.27",
         badge: "최신",
+        title: "미보유(없음) 전법 마우스 호버 시 상위 티어덱 4종 모의 전투 기반 대체 전법 추천 툴팁 추가",
+        items: [
+          "1~5군 추천 조합, 티어표, 공존덱 세트의 모든 빨간색 미보유 전법((없음) / [없음]) 배지에 마우스를 올리면 대체 전법 추천 툴팁 표시",
+          "등록된 상위 티어덱 4종과의 실제 모의 전투를 즉시 수행(결과 캐싱)하여 1순위·2순위 보유 대체 전법과 승률·평균 잔여 병력·피해량·치유량·전법 효과를 안내",
+          "1~5군 및 공존덱 세트에서는 다른 부대에 이미 편성된 전법을 자동으로 제외하고 최적의 미사용 보유 전법을 추천"
+        ]
+      },
+      {
+        version: "v1.66",
+        date: "2026.11.27",
+        badge: "",
         title: "대체 전법 모의 전투 승률·잔여 병력·피해량 0 표시 버그 수정 (<기임> 선본 엔진 오류 해결)",
         items: [
           "전투 엔진 내 [<기임> 선본] 1턴 조롱 처리 중 발생하던 참조 오류(enemyTeam)를 수정해, <기임> 보유 티어덱과의 모의 전투가 정상 완료되도록 조치",
@@ -7017,7 +7028,7 @@
                   </div>
                   <p class="text-xs text-slate-300 bg-slate-900/60 border border-slate-800 rounded-lg px-3 py-2">${tr.note}</p>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    ${tr.members.map(m => {
+                    ${tr.members.map((m, mIdx) => {
                       const isDupG = genUsage[m.name] > 1;
                       const isOwnedG = state.ownedGenerals.includes(m.name);
                       return `
@@ -7060,10 +7071,12 @@
                                     </span>
                                   </span>`;
                                 }
-                                const cls = !ownedSk ? "bg-rose-950/70 text-rose-300 border-rose-500/50"
-                                  : dupSk ? "bg-amber-950/70 text-amber-300 border-amber-500/50"
+                                if (!ownedSk) {
+                                  return renderMissingSkillBadge(sk, " (없음)", "px-2 py-0.5 text-[11px] rounded border bg-rose-950/70 text-rose-300 border-rose-500/50", tr, mIdx, Object.keys(skillUsage));
+                                }
+                                const cls = dupSk ? "bg-amber-950/70 text-amber-300 border-amber-500/50"
                                   : "bg-slate-800 text-slate-200 border-slate-700";
-                                return `<span class="px-2 py-0.5 text-[11px] rounded border ${cls}">${sk}${!ownedSk ? " (없음)" : dupSk ? " (중복)" : ""}</span>`;
+                                return `<span class="px-2 py-0.5 text-[11px] rounded border ${cls}">${sk}${dupSk ? " (중복)" : ""}</span>`;
                               }).join("")}
                             </div>
                           </div>
@@ -7120,84 +7133,6 @@
             return { td, score };
           }).sort((a, b) => b.score - a.score);
 
-          const buildSimDeckFromTier = (td, overrideMemberIdx = -1, overrideSkillName = "") => {
-            const fObj = FORMATIONS.find(f => f.name === td.formation) || FORMATIONS[0];
-            const fSk = (sn) => (state.skills.find(x => x.name === sn)?.id) || "none";
-            const fSt = (stName) => {
-              if (!stName) return "none";
-              const parts = stName.split("/").map(x => x.trim()).filter(Boolean);
-              for (const p of parts) {
-                const bare = p.replace(/^금서\s*/, "").replace(/[<>]/g, "").trim();
-                const found = STRATEGIES.find(st => {
-                  const sn = st.name.replace(/[<>]/g, "").trim();
-                  return st.name === p || sn === p || sn === bare || sn.startsWith(bare + " ");
-                });
-                if (found) return found.id;
-              }
-              return "none";
-            };
-            return {
-              formation: fObj.id, supply: 100, buildingTech: true,
-              slots: td.members.slice(0, 3).map((mem, idx) => {
-                const g = state.generals.find(x => x.name === mem.name) || state.generals[0];
-                const skList = [...(mem.skills || [])];
-                if (idx === overrideMemberIdx && overrideSkillName) skList[0] = overrideSkillName;
-                const stList = (mem.strategies || []).slice(0, 3).map(fSt);
-                while (stList.length < 3) stList.push("none");
-                return {
-                  generalId: g.id, level: 50, troops: 10000,
-                  skills: [g.innateSkill || "none", fSk(skList[0]), fSk(skList[1])],
-                  strategies: stList,
-                  equip: "none", mount: "none",
-                  equipConfig: makeGearConfig("none", false),
-                  mountConfig: makeGearConfig("none", true)
-                };
-              })
-            };
-          };
-
-          const getMetaTierOpponents = (excludeName) => {
-            const tw = { "T0": 100, "T0.3": 95, "T0.5": 90, "T0.8": 80, "T1": 70, "T2": 50 };
-            const valid = state.tierDecks
-              .filter(d => d.name !== excludeName && d.members.length === 3 && d.members.every(m => state.generals.some(g => g.name === m.name)))
-              .sort((a, b) => (tw[b.tier] || 40) - (tw[a.tier] || 40));
-            return valid.slice(0, 4).map(d => ({ name: d.name, tier: d.tier, deck: buildSimDeckFromTier(d) }));
-          };
-
-          const evalSkillBySim = (td, memberIdx, candName, trialsPerOpp = 2) => {
-            const savedDecks = state.decks;
-            const savedMax = state.maxLevelMode;
-            const opps = getMetaTierOpponents(td.name);
-            if (!opps.length) return { score: 0, winRate: 0, avgRemain: 0, avgDmg: 0, avgHeal: 0, oppNames: [] };
-            let wins = 0, totalRemain = 0, totalDmg = 0, totalHeal = 0, totalRuns = 0;
-            try {
-              state.maxLevelMode = true;
-              const allyDeck = buildSimDeckFromTier(td, memberIdx, candName);
-              for (const opp of opps) {
-                state.decks = { ally: allyDeck, enemy: opp.deck };
-                for (let k = 0; k < trialsPerOpp; k++) {
-                  const res = runBattleSimulation(8);
-                  if (res.winner === "ally") wins++;
-                  totalRemain += res.allyUnits.reduce((s, u) => s + Math.max(0, u.troops), 0);
-                  totalDmg += res.allyUnits.reduce((s, u) => s + (u.totalKills || 0), 0);
-                  totalHeal += res.allyUnits.reduce((s, u) => s + (u.totalHeal || 0), 0);
-                  totalRuns++;
-                }
-              }
-            } catch (e) {
-              return { score: 0, winRate: 0, avgRemain: 0, avgDmg: 0, avgHeal: 0, oppNames: opps.map(o => o.name) };
-            } finally {
-              state.decks = savedDecks;
-              state.maxLevelMode = savedMax;
-            }
-            const winRate = Math.round((wins / Math.max(1, totalRuns)) * 100);
-            const avgRemain = Math.round(totalRemain / Math.max(1, totalRuns));
-            const avgDmg = Math.round(totalDmg / Math.max(1, totalRuns));
-            const avgHeal = Math.round(totalHeal / Math.max(1, totalRuns));
-            const score = winRate * 220 + avgRemain * 1.4 + avgDmg * 0.35 + avgHeal * 0.45;
-            return { score, winRate, avgRemain, avgDmg, avgHeal, oppNames: opps.map(o => o.name) };
-          };
-
           const pickBestSimSubstitute = (td, member, mIdx, origName, usedSet, candSet, ownedOnly, causeTxt) => {
             const rawPool = ownedOnly
               ? state.ownedSkills
@@ -7247,7 +7182,7 @@
             const tested = preScored.map(c => ({
               name: c.name,
               pre: c.pre,
-              sim: evalSkillBySim(td, mIdx, c.name, 2)
+              sim: evalSkillBySim(td, mIdx, c.name, 2, origName)
             })).sort((a, b) => b.sim.score - a.sim.score);
 
             const best = tested[0];
@@ -7472,7 +7407,7 @@
                     <p class="text-xs text-slate-300">${td.comment || ""}</p>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      ${td.members.map(m => {
+                      ${td.members.map((m, mIdx) => {
                         const hasG = state.ownedGenerals.includes(m.name);
                         return `
                           <div class="bg-slate-900/75 border ${hasG ? "border-slate-700/70" : "border-rose-500/60"} rounded-xl p-3 space-y-2">
@@ -7488,7 +7423,10 @@
                               <div class="flex flex-wrap gap-1">
                                 ${(m.skills || []).map(sk => {
                                   const hasS = state.ownedSkills.includes(sk);
-                                  return `<span class="px-2 py-0.5 text-[11px] rounded border ${hasS ? "bg-slate-800 text-emerald-200 border-emerald-500/35" : "bg-rose-950/75 text-rose-300 border-rose-500/60 font-bold"}">${sk} ${hasS ? "✓" : "[없음]"}</span>`;
+                                  if (!hasS) {
+                                    return renderMissingSkillBadge(sk, " [없음]", "px-2 py-0.5 text-[11px] rounded border bg-rose-950/75 text-rose-300 border-rose-500/60 font-bold", td, mIdx, []);
+                                  }
+                                  return `<span class="px-2 py-0.5 text-[11px] rounded border bg-slate-800 text-emerald-200 border-emerald-500/35">${sk} ✓</span>`;
                                 }).join("")}
                               </div>
                             </div>
@@ -8036,7 +7974,7 @@
                           <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-sky-300">${dk.formation}</span>
                         </div>
                         <div class="space-y-1.5">
-                          ${dk.members.map(m => {
+                          ${dk.members.map((m, mIdx) => {
                             const hasG = state.ownedGenerals.includes(m.name);
                             return `
                               <div class="text-[11px] bg-slate-950/70 rounded-lg p-2 border ${hasG ? "border-slate-800" : "border-rose-500/50"}">
@@ -8048,7 +7986,11 @@
                                   ${m.skills.map(sk => {
                                     const baseSk = sk.replace("(영본)", "").trim();
                                     const hasS = state.ownedSkills.includes(baseSk) || state.ownedSkills.includes(sk);
-                                    return `<span class="px-1.5 py-0.2 rounded text-[10px] border ${hasS ? "bg-slate-800 text-emerald-200 border-emerald-500/30" : "bg-rose-950/70 text-rose-300 border-rose-500/50 font-bold"}">${sk}${hasS ? "" : " [없음]"}</span>`;
+                                    if (!hasS) {
+                                      const csUsed = cs.decks.flatMap(d => (d.members || []).flatMap(x => (x.skills || []).map(s => s.replace("(영본)", "").trim())));
+                                      return renderMissingSkillBadge(sk, " [없음]", "px-1.5 py-0.2 rounded text-[10px] border bg-rose-950/70 text-rose-300 border-rose-500/50 font-bold", dk, mIdx, csUsed);
+                                    }
+                                    return `<span class="px-1.5 py-0.2 rounded text-[10px] border bg-slate-800 text-emerald-200 border-emerald-500/30">${sk}</span>`;
                                   }).join("")}
                                 </div>
                               </div>
@@ -8286,6 +8228,222 @@
       const total = missingGenerals.length + missingInnateSkills.length + missingSkills.length + missingStrats.length;
       const el = document.getElementById("missingDataCount");
       if (el) el.textContent = `${total}건`;
+    }
+
+    // =========================================================================
+    // [공용] 티어덱 모의 전투 기반 대체 전법 평가 & 미보유 전법 호버 추천 툴팁
+    // =========================================================================
+    const _missingSkillSimCache = new Map();
+    let _missingSkillCtxMap = {};
+    let _missingSkillCtxSeq = 0;
+
+    function buildSimDeckFromTier(td, overrideMemberIdx = -1, overrideSkillName = "", origSkillName = "") {
+      const fObj = FORMATIONS.find(f => f.name === td.formation) || FORMATIONS[0];
+      const fSk = (sn) => {
+        if (!sn) return "none";
+        const base = sn.replace("(영본)", "").trim();
+        return (state.skills.find(x => x.name === sn || x.name === base)?.id) || "none";
+      };
+      const fSt = (stName) => {
+        if (!stName) return "none";
+        const parts = stName.split("/").map(x => x.trim()).filter(Boolean);
+        for (const p of parts) {
+          const bare = p.replace(/^금서\s*/, "").replace(/[<>]/g, "").trim();
+          const found = STRATEGIES.find(st => {
+            const sn = st.name.replace(/[<>]/g, "").trim();
+            return st.name === p || sn === p || sn === bare || sn.startsWith(bare + " ");
+          });
+          if (found) return found.id;
+        }
+        return "none";
+      };
+      return {
+        formation: fObj.id, supply: 100, buildingTech: true,
+        slots: (td.members || []).slice(0, 3).map((mem, idx) => {
+          const g = state.generals.find(x => x.name === mem.name) || state.generals[0];
+          const skList = [...(mem.skills || [])];
+          if (idx === overrideMemberIdx && overrideSkillName) {
+            const origIdx = origSkillName ? skList.findIndex(x => x === origSkillName) : -1;
+            skList[origIdx >= 0 ? origIdx : 0] = overrideSkillName;
+          }
+          const stList = (mem.strategies || []).slice(0, 3).map(fSt);
+          while (stList.length < 3) stList.push("none");
+          return {
+            generalId: g.id, level: 50, troops: 10000,
+            skills: [g.innateSkill || "none", fSk(skList[0]), fSk(skList[1])],
+            strategies: stList,
+            equip: "none", mount: "none",
+            equipConfig: makeGearConfig("none", false),
+            mountConfig: makeGearConfig("none", true)
+          };
+        })
+      };
+    }
+
+    function getMetaTierOpponents(excludeName) {
+      const tw = { "T0": 100, "T0.3": 95, "T0.5": 90, "T0.8": 80, "T1": 70, "T2": 50 };
+      const valid = state.tierDecks
+        .filter(d => d.name !== excludeName && d.members.length === 3 && d.members.every(m => state.generals.some(g => g.name === m.name)))
+        .sort((a, b) => (tw[b.tier] || 40) - (tw[a.tier] || 40));
+      return valid.slice(0, 4).map(d => ({ name: d.name, tier: d.tier, deck: buildSimDeckFromTier(d) }));
+    }
+
+    function evalSkillBySim(td, memberIdx, candName, trialsPerOpp = 2, origSkillName = "") {
+      const savedDecks = state.decks;
+      const savedMax = state.maxLevelMode;
+      const opps = getMetaTierOpponents(td.name);
+      if (!opps.length) return { score: 0, winRate: 0, avgRemain: 0, avgDmg: 0, avgHeal: 0, oppNames: [] };
+      let wins = 0, totalRemain = 0, totalDmg = 0, totalHeal = 0, totalRuns = 0;
+      try {
+        state.maxLevelMode = true;
+        const allyDeck = buildSimDeckFromTier(td, memberIdx, candName, origSkillName);
+        for (const opp of opps) {
+          state.decks = { ally: allyDeck, enemy: opp.deck };
+          for (let k = 0; k < trialsPerOpp; k++) {
+            const res = runBattleSimulation(8);
+            if (res.winner === "ally") wins++;
+            totalRemain += res.allyUnits.reduce((s, u) => s + Math.max(0, u.troops), 0);
+            totalDmg += res.allyUnits.reduce((s, u) => s + (u.totalKills || 0), 0);
+            totalHeal += res.allyUnits.reduce((s, u) => s + (u.totalHeal || 0), 0);
+            totalRuns++;
+          }
+        }
+      } catch (e) {
+        return { score: 0, winRate: 0, avgRemain: 0, avgDmg: 0, avgHeal: 0, oppNames: opps.map(o => o.name) };
+      } finally {
+        state.decks = savedDecks;
+        state.maxLevelMode = savedMax;
+      }
+      const winRate = Math.round((wins / Math.max(1, totalRuns)) * 100);
+      const avgRemain = Math.round(totalRemain / Math.max(1, totalRuns));
+      const avgDmg = Math.round(totalDmg / Math.max(1, totalRuns));
+      const avgHeal = Math.round(totalHeal / Math.max(1, totalRuns));
+      const score = winRate * 220 + avgRemain * 1.4 + avgDmg * 0.35 + avgHeal * 0.45;
+      return { score, winRate, avgRemain, avgDmg, avgHeal, oppNames: opps.map(o => o.name) };
+    }
+
+    function getMissingSkillRecommendations(td, memberIdx, origSkillName, excludeUsedSkills = []) {
+      const member = (td.members || [])[memberIdx];
+      if (!member) return null;
+      const ownedSig = [...state.ownedSkills].sort().join(",");
+      const usedSet = new Set(excludeUsedSkills || []);
+      (td.members || []).forEach(m => (m.skills || []).forEach(s => usedSet.add(s.replace("(영본)", "").trim())));
+      const cacheKey = `${td.name || ""}||${member.name}||${origSkillName}||${[...usedSet].sort().join(",")}||${ownedSig}`;
+      if (_missingSkillSimCache.has(cacheKey)) return _missingSkillSimCache.get(cacheKey);
+
+      let fallbackAll = false;
+      let pool = state.ownedSkills.filter(n => getSkillCategory(n) !== "innate" && !usedSet.has(n));
+      if (!pool.length) {
+        fallbackAll = true;
+        pool = state.skills.map(s => s.name).filter(n => getSkillCategory(n) !== "innate" && !usedSet.has(n));
+      }
+      if (!pool.length) return null;
+
+      const gObj = state.generals.find(x => x.name === member.name);
+      const force = gObj ? gObj.stats.force : 150;
+      const intel = gObj ? gObj.stats.intel : 150;
+      const cmd = gObj ? gObj.stats.command : 150;
+      const isPhys = force > intel + 25;
+      const isStrat = intel > force + 25;
+      const isFront = member.pos === "전열" || cmd >= 195;
+      const roleLabel = isPhys ? "무력 딜러" : isStrat ? "지력 책사·보조" : isFront ? "전열 탱커" : "균형형";
+
+      const baseOrig = origSkillName.replace("(영본)", "").trim();
+      const origObj = state.skills.find(x => x.name === origSkillName || x.name === baseOrig);
+      const origTag = (origObj?.tag || "") + " " + (origObj?.desc || "");
+      const needHealOrDef = /치유|방어|감소|보호|정화|도발/.test(origTag);
+
+      const preScored = pool.map(n => {
+        const o = state.skills.find(x => x.name === n);
+        const txt = ((o?.tag || "") + " " + (o?.desc || ""));
+        let s = 10;
+        if (isPhys) {
+          if (/병기|추격|연타|회심|무력|관통/.test(txt)) s += 32;
+          if (/책략 피해/.test(txt) && !/병기/.test(txt)) s -= 35;
+        }
+        if (isStrat) {
+          if (/책략|지력|치유|회복|지원|간파|묘책/.test(txt)) s += 32;
+          if (/병기 피해/.test(txt) && !/책략/.test(txt)) s -= 35;
+        }
+        if (isFront) {
+          if (/방어|감소|치유|회복|도발|통솔|보호|정화/.test(txt)) s += 26;
+        }
+        if (needHealOrDef && /치유|회복|방어|감소|보호|정화/.test(txt)) s += 24;
+        if (o?.type === "지휘" || o?.type === "패시브") s += 10;
+        if ((o?.rate || 0) >= 60) s += 6;
+        if (getSkillCategory(n) === "faction" || getSkillCategory(n) === "variant") s += 8;
+        return { name: n, pre: s };
+      }).sort((a, b) => b.pre - a.pre).slice(0, 4);
+
+      const tested = preScored.map(c => ({
+        name: c.name,
+        sim: evalSkillBySim(td, memberIdx, c.name, 2, origSkillName),
+        desc: state.skills.find(x => x.name === c.name)?.desc || ""
+      })).sort((a, b) => b.sim.score - a.sim.score);
+
+      const result = {
+        memberName: member.name,
+        roleLabel,
+        origSkillName,
+        oppSummary: tested[0]?.sim?.oppNames?.length ? tested[0].sim.oppNames.join("·") : "주요 티어덱",
+        top: tested.slice(0, 2),
+        fallbackAll
+      };
+      _missingSkillSimCache.set(cacheKey, result);
+      return result;
+    }
+
+    function renderMissingSkillBadge(sk, suffixText, badgeCls, deckObj, memberIdx, excludeUsedSkills = []) {
+      const ctxId = `ms_${++_missingSkillCtxSeq}`;
+      _missingSkillCtxMap[ctxId] = { deck: deckObj, memberIdx, origSkillName: sk, excludeUsed: excludeUsedSkills };
+      return `<span class="relative group inline-flex items-center missing-skill-hover" data-ms-ctx="${ctxId}">
+        <span class="${badgeCls} cursor-help inline-flex items-center gap-1">${sk}${suffixText}</span>
+        <span class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full left-0 mb-1.5 z-50 w-80 p-3 rounded-xl bg-slate-950/95 border border-rose-400/60 shadow-2xl text-left">
+          <span class="block text-[11px] font-bold text-rose-300 mb-1">💡 미보유 전법 대체 추천</span>
+          <span class="ms-tooltip-body block text-[11px] text-slate-300 leading-snug">상위 티어덱 4종 모의 전투 계산 중...</span>
+        </span>
+      </span>`;
+    }
+
+    function bindMissingSkillHoverDelegation() {
+      if (window._missingSkillHoverBound) return;
+      window._missingSkillHoverBound = true;
+      document.addEventListener("mouseenter", (e) => {
+        const target = e.target && e.target.closest ? e.target.closest(".missing-skill-hover") : null;
+        if (!target || target.dataset.msLoaded === "1") return;
+        const ctx = _missingSkillCtxMap[target.dataset.msCtx];
+        const bodyEl = target.querySelector(".ms-tooltip-body");
+        if (!ctx || !bodyEl) return;
+        target.dataset.msLoaded = "1";
+        const rec = getMissingSkillRecommendations(ctx.deck, ctx.memberIdx, ctx.origSkillName, ctx.excludeUsed);
+        if (!rec || !rec.top.length) {
+          bodyEl.innerHTML = `<span class="text-slate-400">추천 가능한 대체 전법이 없습니다.</span>`;
+          return;
+        }
+        const best = rec.top[0];
+        const second = rec.top[1];
+        bodyEl.innerHTML = `
+          <span class="block text-[10px] text-slate-400 mb-1.5 leading-snug">
+            ${rec.memberName}(${rec.roleLabel}) 기준 상위 티어덱 4종(${rec.oppSummary}) 모의 전투 결과${rec.fallbackAll ? " · 보유 전법 미체크로 전체 기준" : ""}
+          </span>
+          <span class="block p-2 rounded-lg bg-cyan-950/50 border border-cyan-500/40 mb-1.5">
+            <span class="flex items-center justify-between gap-1 text-[11px] font-bold text-cyan-200">
+              <span>1순위: ${best.name}</span>
+              <span class="text-[10px] text-emerald-300">승률 ${best.sim.winRate}%</span>
+            </span>
+            <span class="block text-[10px] text-slate-200 mt-0.5">평균 잔여 ${best.sim.avgRemain.toLocaleString()} (피해 ${best.sim.avgDmg.toLocaleString()} / 치유 ${best.sim.avgHeal.toLocaleString()})</span>
+            ${best.desc ? `<span class="block text-[10px] text-slate-400 mt-1 pt-1 border-t border-slate-800/80 leading-snug">${best.desc}</span>` : ""}
+          </span>
+          ${second ? `
+            <span class="block px-2 py-1.5 rounded-lg bg-slate-900/90 border border-slate-700/70">
+              <span class="flex items-center justify-between gap-1 text-[10px] font-semibold text-slate-200">
+                <span>2순위 대안: ${second.name}</span>
+                <span class="text-amber-300">승률 ${second.sim.winRate}% · 잔여 ${second.sim.avgRemain.toLocaleString()}</span>
+              </span>
+            </span>
+          ` : ""}
+        `;
+      }, true);
     }
 
     function initApp() {
@@ -8845,6 +9003,7 @@
 
       document.getElementById("modalClose").addEventListener("click", closeModal);
       document.getElementById("appModal").addEventListener("click", e => { if (e.target.id === "appModal") closeModal(); });
+      bindMissingSkillHoverDelegation();
       lucide.createIcons();
     }
 
