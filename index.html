@@ -1790,6 +1790,24 @@
         ]
       },
       {
+        id: "tier_custom_zt_jf_lx", tier: "T0.8", stage: ["초반","중반","후반"], bt: "중·저돌파", name: "주태·전풍·육손 (손권 대체 · 남만 카운터)", formation: "안형진",
+        comment: "손권 미보유 시 100% 보유 장수·전법으로 구성하는 남만 방패 카운터 변형 (모의전투 남만 상대 53% 승률). 전풍 [예측의 신] + [침략 방어(영본)]·[지략 방어]로 1군 남만제갈과 전법 충돌 없이 공존 가능.",
+        members: [
+          { name: "육손", pos: "후열", statNote: "지력", equipNote: "지력·통솔 / 지력·선공", skills: ["허실 간파", "신체 개조"], strategies: ["금서 분영", "귀모", "기동"] },
+          { name: "전풍", pos: "전열", statNote: "지력·통솔", equipNote: "지력·통솔", skills: ["침략 방어(영본)", "지략 방어"], altSkills: ["화공전술"], strategies: ["기동", "여심", "병교"] },
+          { name: "주태", pos: "전열", statNote: "통솔", equipNote: "지력·통솔", skills: ["세금 과징수", "결사 돌진"], strategies: ["금서 역전", "기임", "병교"] }
+        ]
+      },
+      {
+        id: "tier_custom_zt_ns_lx", tier: "T0.8", stage: ["초반","중반","후반"], bt: "중·저돌파", name: "주태·노숙·육손 (오 3인 · 남만 카운터)", formation: "안형진",
+        comment: "손권 미보유 시 오 3인 진영 보너스(+10%)를 유지하는 남만 카운터 변형 (모의전투 남만 상대 50% 승률). 노숙 [형주 분할] 무장 해제·피해 증감 + [침략 방어(영본)]·[지략 방어] 조합 (오의 불길 획득 시 교체 추천).",
+        members: [
+          { name: "육손", pos: "후열", statNote: "지력", equipNote: "지력·통솔 / 지력·선공", skills: ["허실 간파", "신체 개조"], strategies: ["금서 분영", "귀모", "기동"] },
+          { name: "노숙", pos: "전열", statNote: "지력·통솔", equipNote: "지력·통솔", skills: ["침략 방어(영본)", "지략 방어"], altSkills: ["오의 불길"], strategies: ["기동", "여심", "병교"] },
+          { name: "주태", pos: "전열", statNote: "통솔", equipNote: "지력·통솔", skills: ["세금 과징수", "결사 돌진"], strategies: ["금서 역전", "기임", "병교"] }
+        ]
+      },
+      {
         id: "tier_s5_5", tier: "T0", stage: ["중반","후반"], bt: "고·풀돌파", name: "오염 쌍황 육손 (육손·손권·조조)", formation: "안형진",
         comment: "고·풀돌파 대응 범위·연속 격파 우수. 조조·손권 돌파가 높을 때 중후반 육손 덱 우선 선택. 조조를 오 진영으로 전환.",
         members: [
@@ -2297,14 +2315,25 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v81";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v82";
     const USER_OWNED_KEY = "samgukji_user_owned_persist_v1";
 
     const UPDATE_LOGS = [
       {
-        version: "v1.75",
+        version: "v1.76",
         date: "2026.11.28",
         badge: "최신",
+        title: "손권 대체 남만 카운터 2종 티어표 및 1~5군 추천 후보 추가 (총 24티어덱)",
+        items: [
+          "[주태·전풍·육손 (손권 대체 · 남만 카운터)] 추가 — 침략 방어(영본)·지략 방어 구성으로 1군 남만제갈과 전법 충돌 없이 공존 가능",
+          "[주태·노숙·육손 (오 3인 · 남만 카운터)] 추가 — 오 3인 진영 보너스(+10%) 유지 및 노숙 [형주 분할] 무장 해제 조합",
+          "티어표·1~5군 자동 추천·시뮬레이터 상단 티어덱 불러오기 드롭다운에 모두 자동 연동"
+        ]
+      },
+      {
+        version: "v1.75",
+        date: "2026.11.28",
+        badge: "",
         title: "제갈량 티어표 금서 표기 [금서 팔진]으로 통일 — 필요 데이터 0건(100% 완비) 달성!",
         items: [
           "실제 인게임(삼국지 천하결전) 기준 제갈량 고유 금서가 [금서 팔진]인 점을 반영해 티어표 내 [금서 출사표] 표기를 [금서 팔진]으로 정정",
