@@ -2315,14 +2315,36 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v83";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v85";
     const USER_OWNED_KEY = "samgukji_user_owned_persist_v1";
 
     const UPDATE_LOGS = [
       {
-        version: "v1.77",
+        version: "v1.79",
         date: "2026.11.28",
         badge: "최신",
+        title: "1~5군 추천 조합 상단을 [필수 포함 티어덱 선택] 패널로 개편",
+        items: [
+          "장수 개별 선택 대신 티어표에 등록된 24개 덱 구성 자체를 최대 5개까지 직접 클릭해 선택할 수 있도록 개편 (선택 순서대로 1군·2군… 배지 표시)",
+          "이미 선택한 덱과 장수가 겹치는 덱은 클릭 시 중복 장수 안내로 즉시 방지",
+          "[조건별 1~5군 자동 추천] 실행 시 직접 선택한 티어덱을 선택 순서대로 최우선 배치하고, 남은 부대 슬롯을 전법 중복 없이 자동 조합"
+        ]
+      },
+      {
+        version: "v1.78",
+        date: "2026.11.28",
+        badge: "",
+        title: "1~5군 자동 추천에 [필수 포함 장수 선택 (티어표 장수)] 기능 추가",
+        items: [
+          "1~5군 추천 조합 상단에 티어표에 등장하는 모든 장수를 가나다순으로 표시하는 [필수 포함 장수 선택] 패널 추가 (보유/미보유 구분 표시 및 선택 초기화 지원)",
+          "원하는 장수를 1명 이상 선택하고 [조건별 1~5군 자동 추천]을 누르면 해당 장수가 포함된 티어덱을 최우선으로 1~5군에 편성 (보유 장수 필터가 켜져 있어도 직접 선택한 미보유 장수는 예외 허용)",
+          "선택한 장수로 우선 편성된 부대에는 [★ 선택 장수 포함(...)] 안내 배지 표시"
+        ]
+      },
+      {
+        version: "v1.77",
+        date: "2026.11.28",
+        badge: "",
         title: "전풍 고유전법(지략 방어) 오기입 수정 및 대체 전법 추천 시 진영 3인 전용 전법 필터 적용",
         items: [
           "[주태·전풍·육손]과 [주태·노숙·육손] 학습 전법란에 전풍 고유전법 [지략 방어]가 잘못 들어갔던 오류를 수정해 각각 실제 학습 가능 보유 전법인 [준비 완료] · [군자의 복수]로 교정",
@@ -3187,6 +3209,7 @@
       dbStratSort: "name",
       ownedOnlyFilter: false,
       ownedSkillsOnlyFilter: false,
+      mustIncludeDecks: [],
       maxLevelMode: true,
       maxLevel: 50,
       activeTab: "home",
@@ -7415,6 +7438,43 @@
               </button>
             </div>
           </div>
+          ${(() => {
+            if (!Array.isArray(state.mustIncludeDecks)) state.mustIncludeDecks = [];
+            const tw = { "T0": 100, "T0.3": 95, "T0.5": 90, "T0.8": 80, "T1": 70, "T2": 50 };
+            const sortedDecks = [...state.tierDecks].sort((a, b) => (tw[b.tier] || 40) - (tw[a.tier] || 40) || a.name.localeCompare(b.name, "ko"));
+            const selCnt = state.mustIncludeDecks.length;
+            return `
+              <div class="panel p-3.5 space-y-2.5 border-amber-500/30">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-bold text-amber-300">★ 필수 포함 티어덱 선택 (${sortedDecks.length}종 · 최대 5개)</span>
+                    ${selCnt > 0 ? `<span class="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-200 text-[11px] font-bold">${selCnt}개 선택됨</span>` : `<span class="text-[11px] text-slate-400">원하는 티어덱을 선택하고 자동 추천을 누르면 해당 덱을 우선 배치하고 나머지 부대를 자동 조합합니다</span>`}
+                  </div>
+                  ${selCnt > 0 ? `<button id="btnClearMustDecks" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-rose-950/70 border border-slate-700 text-slate-300 hover:text-rose-300 text-[11px] font-semibold">선택 초기화</button>` : ""}
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                  ${sortedDecks.map(td => {
+                    const selIdx = state.mustIncludeDecks.indexOf(td.id);
+                    const isSel = selIdx >= 0;
+                    const missG = (td.members || []).filter(m => !state.ownedGenerals.includes(m.name)).map(m => m.name);
+                    const memNames = (td.members || []).map(m => m.name).join("·");
+                    return `<button type="button" class="btn-toggle-must-deck px-2.5 py-1 rounded-lg text-[11px] border transition inline-flex items-center gap-1.5 ${
+                      isSel
+                        ? "bg-amber-500/25 border-amber-400 text-amber-100 font-bold ring-1 ring-amber-400/40"
+                        : "bg-slate-900/80 hover:bg-slate-800 border-slate-700/80 text-slate-300"
+                    }" data-tdid="${td.id}" title="${memNames} (${td.formation})">
+                      ${isSel
+                        ? `<span class="px-1 py-0.2 rounded bg-amber-400 text-slate-950 text-[9px] font-extrabold">${selIdx + 1}군</span>`
+                        : `<span class="w-1.5 h-1.5 rounded-full ${missG.length === 0 ? "bg-emerald-400" : "bg-rose-400"}"></span>`}
+                      <span class="text-[9px] px-1 rounded bg-slate-800/90 text-amber-300 font-bold">${td.tier}</span>
+                      <span>${td.name}</span>
+                      ${missG.length > 0 ? `<span class="text-[9px] text-rose-300">(미보유:${missG.join(",")})</span>` : ""}
+                    </button>`;
+                  }).join("")}
+                </div>
+              </div>
+            `;
+          })()}
           <div class="grid grid-cols-1 gap-4">
             ${state.myTroops.map((tr, tIdx) => {
               if (!tr.members.length) {
@@ -7552,10 +7612,44 @@
         if (aOwn) aOwn.addEventListener("change", e => { state.ownedOnlyFilter = e.target.checked; });
         const aOwnSk = document.getElementById("chkAutoOwnedSkillsOnly");
         if (aOwnSk) aOwnSk.addEventListener("change", e => { state.ownedSkillsOnlyFilter = e.target.checked; });
+        container.querySelectorAll(".btn-toggle-must-deck").forEach(btn => btn.addEventListener("click", e => {
+          const tdId = e.currentTarget.dataset.tdid;
+          if (!Array.isArray(state.mustIncludeDecks)) state.mustIncludeDecks = [];
+          const idx = state.mustIncludeDecks.indexOf(tdId);
+          if (idx >= 0) {
+            state.mustIncludeDecks.splice(idx, 1);
+          } else {
+            if (state.mustIncludeDecks.length >= 5) {
+              showToast("필수 포함 티어덱은 최대 5개까지 선택할 수 있습니다.");
+              return;
+            }
+            const targetTd = state.tierDecks.find(d => d.id === tdId);
+            const targetGens = new Set((targetTd?.members || []).map(m => m.name));
+            const conflictDeck = state.mustIncludeDecks
+              .map(id => state.tierDecks.find(d => d.id === id))
+              .find(d => d && (d.members || []).some(m => targetGens.has(m.name)));
+            if (conflictDeck) {
+              const dup = conflictDeck.members.filter(m => targetGens.has(m.name)).map(m => m.name).join(", ");
+              showToast(`이미 선택한 [${conflictDeck.name}] 덱과 장수(${dup})가 중복됩니다!`);
+              return;
+            }
+            state.mustIncludeDecks.push(tdId);
+          }
+          saveState();
+          renderTroops();
+        }));
+        const clearMustBtn = document.getElementById("btnClearMustDecks");
+        if (clearMustBtn) clearMustBtn.addEventListener("click", () => {
+          state.mustIncludeDecks = [];
+          saveState();
+          renderTroops();
+        });
         if (autoBtn) autoBtn.addEventListener("click", () => {
           const usedGenerals = new Set();
           const usedSkills = new Set();
+          const mustList = Array.isArray(state.mustIncludeDecks) ? state.mustIncludeDecks : [];
           const filteredTier = state.tierDecks.filter(td => {
+            if (mustList.includes(td.id)) return true; // 직접 선택한 티어덱은 필터와 무관하게 무조건 포함
             const stOk = state.tierStageFilter === "all" || !td.stage || td.stage.includes(state.tierStageFilter);
             const btOk = state.tierBtFilter === "all" || !td.bt || td.bt === "모든 돌파" || td.bt === state.tierBtFilter;
             const ownOk = !state.ownedOnlyFilter || td.members.every(m => state.ownedGenerals.includes(m.name));
@@ -7569,8 +7663,10 @@
               (m.skills || []).forEach(sk => { sTot++; if (getSkillCategory(sk) === "innate" || state.ownedSkills.includes(sk)) sHit++; });
             });
             const skWeight = state.ownedSkillsOnlyFilter ? 45 : 20;
-            const score = (gHit / Math.max(1, td.members.length)) * 50 + (sHit / Math.max(1, sTot)) * skWeight + (tierWeight[td.tier] || 10);
-            return { td, score };
+            const pickOrder = mustList.indexOf(td.id);
+            const isPicked = pickOrder >= 0;
+            const score = (isPicked ? (10000 - pickOrder * 100) : 0) + (gHit / Math.max(1, td.members.length)) * 50 + (sHit / Math.max(1, sTot)) * skWeight + (tierWeight[td.tier] || 10);
+            return { td, score, isPicked };
           }).sort((a, b) => b.score - a.score);
 
           const pickBestSimSubstitute = (td, member, mIdx, origName, usedSet, candSet, ownedOnly, causeTxt) => {
@@ -7719,7 +7815,7 @@
               slotNo: filled + 1,
               label: filled === 0 ? "1군 (주력)" : `${filled + 1}군`,
               formation: item.td.formation,
-              note: `[자동 추천: ${item.td.tier} ${item.td.name} · ${extraInfo}] ${item.td.comment || ""}`,
+              note: `${item.isPicked ? "★ 직접 선택한 티어덱 · " : ""}[자동 추천: ${item.td.tier} ${item.td.name} · ${extraInfo}] ${item.td.comment || ""}`,
               members: resolvedMembers
             };
             filled++;
