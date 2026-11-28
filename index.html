@@ -1791,19 +1791,19 @@
       },
       {
         id: "tier_custom_zt_jf_lx", tier: "T0.8", stage: ["초반","중반","후반"], bt: "중·저돌파", name: "주태·전풍·육손 (손권 대체 · 남만 카운터)", formation: "안형진",
-        comment: "손권 미보유 시 100% 보유 장수·전법으로 구성하는 남만 방패 카운터 변형 (모의전투 남만 상대 53% 승률). 전풍 [예측의 신] + [침략 방어(영본)]·[지략 방어]로 1군 남만제갈과 전법 충돌 없이 공존 가능.",
+        comment: "손권 미보유 시 100% 보유 장수·전법으로 구성하는 남만 방패 카운터 변형 (모의전투 남만 상대 40% 승률). 전풍 고유 [지략 방어] + [침략 방어(영본)]·[준비 완료] 조합으로 1군 남만제갈과 전법 충돌 없이 공존 가능.",
         members: [
           { name: "육손", pos: "후열", statNote: "지력", equipNote: "지력·통솔 / 지력·선공", skills: ["허실 간파", "신체 개조"], strategies: ["금서 분영", "귀모", "기동"] },
-          { name: "전풍", pos: "전열", statNote: "지력·통솔", equipNote: "지력·통솔", skills: ["침략 방어(영본)", "지략 방어"], altSkills: ["화공전술"], strategies: ["기동", "여심", "병교"] },
+          { name: "전풍", pos: "전열", statNote: "지력·통솔", equipNote: "지력·통솔", skills: ["침략 방어(영본)", "준비 완료"], altSkills: ["화공전술", "예측의 신"], strategies: ["기동", "여심", "병교"] },
           { name: "주태", pos: "전열", statNote: "통솔", equipNote: "지력·통솔", skills: ["세금 과징수", "결사 돌진"], strategies: ["금서 역전", "기임", "병교"] }
         ]
       },
       {
         id: "tier_custom_zt_ns_lx", tier: "T0.8", stage: ["초반","중반","후반"], bt: "중·저돌파", name: "주태·노숙·육손 (오 3인 · 남만 카운터)", formation: "안형진",
-        comment: "손권 미보유 시 오 3인 진영 보너스(+10%)를 유지하는 남만 카운터 변형 (모의전투 남만 상대 50% 승률). 노숙 [형주 분할] 무장 해제·피해 증감 + [침략 방어(영본)]·[지략 방어] 조합 (오의 불길 획득 시 교체 추천).",
+        comment: "손권 미보유 시 오 3인 진영 보너스(+10%)를 유지하는 남만 카운터 변형 (모의전투 남만 상대 30% 승률). 노숙 [형주 분할] 무장 해제 + [침략 방어(영본)]·[군자의 복수] 조합 (오의 불길 획득 시 교체 추천).",
         members: [
           { name: "육손", pos: "후열", statNote: "지력", equipNote: "지력·통솔 / 지력·선공", skills: ["허실 간파", "신체 개조"], strategies: ["금서 분영", "귀모", "기동"] },
-          { name: "노숙", pos: "전열", statNote: "지력·통솔", equipNote: "지력·통솔", skills: ["침략 방어(영본)", "지략 방어"], altSkills: ["오의 불길"], strategies: ["기동", "여심", "병교"] },
+          { name: "노숙", pos: "전열", statNote: "지력·통솔", equipNote: "지력·통솔", skills: ["침략 방어(영본)", "군자의 복수"], altSkills: ["오의 불길", "속수무책"], strategies: ["기동", "여심", "병교"] },
           { name: "주태", pos: "전열", statNote: "통솔", equipNote: "지력·통솔", skills: ["세금 과징수", "결사 돌진"], strategies: ["금서 역전", "기임", "병교"] }
         ]
       },
@@ -2315,14 +2315,24 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v82";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v83";
     const USER_OWNED_KEY = "samgukji_user_owned_persist_v1";
 
     const UPDATE_LOGS = [
       {
-        version: "v1.76",
+        version: "v1.77",
         date: "2026.11.28",
         badge: "최신",
+        title: "전풍 고유전법(지략 방어) 오기입 수정 및 대체 전법 추천 시 진영 3인 전용 전법 필터 적용",
+        items: [
+          "[주태·전풍·육손]과 [주태·노숙·육손] 학습 전법란에 전풍 고유전법 [지략 방어]가 잘못 들어갔던 오류를 수정해 각각 실제 학습 가능 보유 전법인 [준비 완료] · [군자의 복수]로 교정",
+          "대체 전법 추천 및 미보유 전법 호버 추천 시 [군웅 격돌]·[위의 출정]·[오의 불길]·[촉의 의지] 같은 진영 3인 전용 전법은 동일 진영 3인 덱이 아니면 추천 후보에서 자동 제외"
+        ]
+      },
+      {
+        version: "v1.76",
+        date: "2026.11.28",
+        badge: "",
         title: "손권 대체 남만 카운터 2종 티어표 및 1~5군 추천 후보 추가 (총 24티어덱)",
         items: [
           "[주태·전풍·육손 (손권 대체 · 남만 카운터)] 추가 — 침략 방어(영본)·지략 방어 구성으로 1군 남만제갈과 전법 충돌 없이 공존 가능",
@@ -7568,7 +7578,7 @@
               ? state.ownedSkills
               : Array.from(new Set([...state.ownedSkills, ...state.skills.map(s => s.name)]));
             const pool = rawPool.filter(n =>
-              getSkillCategory(n) !== "innate" && !usedSet.has(n) && !candSet.has(n)
+              getSkillCategory(n) !== "innate" && !usedSet.has(n) && !candSet.has(n) && isFactionSkillAllowedForDeck(n, td)
             );
             if (!pool.length) return null;
 
@@ -8798,6 +8808,18 @@
       return { score, winRate, avgRemain, avgDmg, avgHeal, oppNames: opps.map(o => o.name) };
     }
 
+    function isFactionSkillAllowedForDeck(skillName, td) {
+      const reqMap = { "군웅 격돌": "군", "위의 출정": "위", "오의 불길": "오", "촉의 의지": "촉" };
+      const req = reqMap[skillName];
+      if (!req) return true;
+      const mems = (td && td.members) ? td.members : [];
+      if (mems.length < 3) return false;
+      return mems.every(m => {
+        const g = state.generals.find(x => x.name === m.name);
+        return g && g.faction === req;
+      });
+    }
+
     function getMissingSkillRecommendations(td, memberIdx, origSkillName, excludeUsedSkills = []) {
       const member = (td.members || [])[memberIdx];
       if (!member) return null;
@@ -8808,10 +8830,10 @@
       if (_missingSkillSimCache.has(cacheKey)) return _missingSkillSimCache.get(cacheKey);
 
       let fallbackAll = false;
-      let pool = state.ownedSkills.filter(n => getSkillCategory(n) !== "innate" && !usedSet.has(n));
+      let pool = state.ownedSkills.filter(n => getSkillCategory(n) !== "innate" && !usedSet.has(n) && isFactionSkillAllowedForDeck(n, td));
       if (!pool.length) {
         fallbackAll = true;
-        pool = state.skills.map(s => s.name).filter(n => getSkillCategory(n) !== "innate" && !usedSet.has(n));
+        pool = state.skills.map(s => s.name).filter(n => getSkillCategory(n) !== "innate" && !usedSet.has(n) && isFactionSkillAllowedForDeck(n, td));
       }
       if (!pool.length) return null;
 
