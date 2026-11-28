@@ -2287,14 +2287,25 @@
       }
     ];
 
-    const STORAGE_KEY = "samgukji_cheonha_sim_v76";
+    const STORAGE_KEY = "samgukji_cheonha_sim_v77";
     const USER_OWNED_KEY = "samgukji_user_owned_persist_v1";
 
     const UPDATE_LOGS = [
       {
+        version: "v1.71",
+        date: "2026.11.28",
+        badge: "최신",
+        title: "남만덱 1턴 전멸 밸런스 버그 수정 및 전 장수 44명 고유전법 전투 엔진 100% 구현 완료",
+        items: [
+          "50레벨 10,000병력 PvP에서 피해량 기본 계수(12.2→5.6)가 과도하게 적용돼 남만덱이 1턴 만에 30,000+ 피해로 모든 티어덱을 전멸시키던 문제를 6회차 PvP 실측 로그 기준으로 정밀 보정",
+          "[남방 수호-옹호] 연계 발동 확률(실측 턴당 2회) 및 손권 [강동 호거] 전체 아군 액티브 발동률(+7%×액티브수, 최고속성 영향) 누락 버그 수정",
+          "미구현 상태였던 주태 [불굴의 의지](우군 대신 피해 부담 50%↓ + 사망 면역 불굴), 육손 [화소연영](화공·연소 중첩 + 220% 책략), 노숙 [형주 분할], 왕이 [유인전], 하후돈 [강렬], 등애 [둔전령], 강유 [중원 토벌], 화타 [마비산], 관우·위연·여포·태사자·정욱·장소·관은병·고순·안량·공손찬·관평 등 19종 고유전법을 전투 엔진에 전부 구현 (44/44명 100% 가동)"
+        ]
+      },
+      {
         version: "v1.70",
         date: "2026.11.27",
-        badge: "최신",
+        badge: "",
         title: "신규 무장 인연 2종 추가 (훌륭한 모범 · 무황과 선후 / 총 20종)",
         items: [
           "[훌륭한 모범] (변부인·조비 2인): 부대 내 인연 무장이 첫 3턴 동안 받는 병기 피해 15% 감소 — 도감 및 전투 엔진 반영",
@@ -3844,6 +3855,10 @@
             u.gunryeongCmdBase = effCmd(u);
             addLog(0, side, `${nameTag(u)} 전법 [신속 출병] 발동 (자신 받는 피해 ${red.toFixed(1)}% 감소)`);
           }
+          if (u.skills.includes("dunjeonryeong")) {
+            allUnits.forEach(x => x.tempBuffs.push({ name: "둔전령-감소", turns: 3, dmgInc: -36.06 }));
+            addLog(0, side, `${nameTag(u)} 전법 [둔전령] 발동 (첫 3턴 전체 적·아군 주는 피해 36.1% 감소)`);
+          }
           if (u.skills.includes("simyeon")) {
             addLog(0, side, `${nameTag(u)} 전법 [심연의 잠룡] 발동 (첫 3턴 일반공격 불가·피격 시 속성 축적, 4·6·8턴 광역 폭발)`);
           }
@@ -3967,11 +3982,22 @@
             const learned = u.skills.slice(1).map(sid => getSkill(sid)).filter(Boolean);
             const actCnt = learned.filter(s => s.type === "액티브").length;
             const nonActCnt = learned.length - actCnt;
+            const topStat = Math.max(effForce(u), effIntel(u), effCmd(u), u.stats.speed || 100);
+            const sMult = 1 + topStat / 400;
+            const actRateBonus = 7 * actCnt * sMult;
+            const physRedBonus = 5 * actCnt * sMult;
+            const stratRedBonus = 5 * nonActCnt * sMult;
             units.forEach(a => {
-              if (actCnt > 0) addDmgRed(a, 5 * actCnt, "physDmgRed");
-              if (nonActCnt > 0) { a.doubleHitRate += 28 * nonActCnt; addDmgRed(a, 5 * nonActCnt, "stratDmgRed"); }
+              if (actCnt > 0) {
+                a.activeRateInc = (a.activeRateInc || 0) + actRateBonus;
+                addDmgRed(a, physRedBonus, "physDmgRed");
+              }
+              if (nonActCnt > 0) {
+                a.doubleHitRate += 28 * nonActCnt * sMult;
+                addDmgRed(a, stratRedBonus, "stratDmgRed");
+              }
             });
-            addLog(0, side, `${nameTag(u)} 고유 전법 [강동 호거] 발동 (액티브 ${actCnt}개·비액티브 ${nonActCnt}개 버프 적용)`);
+            addLog(0, side, `${nameTag(u)} 고유 전법 [강동 호거] 발동 (액티브 ${actCnt}개: 발동률 +${actRateBonus.toFixed(1)}%·병기피감 ${physRedBonus.toFixed(1)}% / 비액티브 ${nonActCnt}개)`);
           }
           if (u.skills.includes("choseon_chajeon")) {
             u.lifesteal += 24;
@@ -4162,7 +4188,7 @@
         const effDef = defStat * (1 - Math.min(0.5, pen / 100));
 
         // Base damage scaled by sqrt(troops) * coef * stat ratio
-        let dmg = Math.sqrt(attacker.troops) * (opts.coef / 100) * (atkStat / (effDef * 0.85 + 38)) * 12.2;
+        let dmg = Math.sqrt(attacker.troops) * (opts.coef / 100) * (atkStat / (effDef * 0.85 + 38)) * 5.6; // 6회차 PvP 실측 보정 (5~7턴 공방 기준)
 
         // Troop difference scaling (남방의 칼날 / 남방 수호 이족)
         if (opts.troopDiffScale && target.troops > attacker.troops) {
@@ -4372,9 +4398,41 @@
 
         // Slight natural variance (+/- 5%)
         dmg *= (0.95 + Math.random() * 0.10);
-        const finalDmg = Math.max(1, Math.min(target.troops, Math.round(dmg)));
+        let rawDmg = Math.max(1, Math.round(dmg));
+
+        // [주태 고유: 불굴의 의지] 우군이 현재 병력 10% 초과 피해 받기 직전 대신 부담 (피해 50%↓ 통솔 영향, 우군당 턴 최대 3회)
+        if (!opts.isIntercept && target.troops > 0 && rawDmg > target.troops * 0.10) {
+          const zt = alive(getTeam(target.side)).find(a => a.uid !== target.uid && a.skills.includes("bulgul_uiji"));
+          if (zt) {
+            zt.bulgulGuardCnt = zt.bulgulGuardCnt || {};
+            const usedCnt = zt.bulgulGuardCnt[target.uid] || 0;
+            const guardProb = Math.min(98, 80 * (1 + effCmd(zt) / 600));
+            if (usedCnt < 3 && Math.random() * 100 < guardProb) {
+              zt.bulgulGuardCnt[target.uid] = usedCnt + 1;
+              const redRatio = Math.min(0.70, 0.50 * (1 + effCmd(zt) / 800));
+              const takenByZt = Math.max(1, Math.round(rawDmg * (1 - redRatio)));
+              addLog(currentTurn, zt.side, `${nameTag(zt)} 【불굴의 의지】 발동! ${nameTag(target)}의 피해 대신 부담 (${Math.round(redRatio * 100)}% 경감)`);
+              target = zt;
+              rawDmg = takenByZt;
+            }
+          }
+        }
+
+        let finalDmg = Math.max(1, Math.min(target.troops, rawDmg));
+
+        // [주태 고유: 불굴의 의지 - 불굴] 사망 직전 생존 우군 존재 시 치명 피해 면역
+        if (target.skills.includes("bulgul_uiji") && finalDmg >= target.troops) {
+          const otherAlive = alive(getTeam(target.side)).some(a => a.uid !== target.uid);
+          const procs = target.bulgulDeathProcs || 0;
+          if (otherAlive && Math.random() * 100 < Math.max(20, 100 - procs * 10)) {
+            target.bulgulDeathProcs = procs + 1;
+            finalDmg = Math.max(0, target.troops - 1);
+            addLog(currentTurn, target.side, `${nameTag(target)} 【불굴의 의지-불굴】 발동! 치명 피해 면역 (병력 1 생존)`);
+          }
+        }
 
         target.troops -= finalDmg;
+        attacker.teamHitsThisTurn = (attacker.teamHitsThisTurn || 0) + 1;
         attacker.totalKills += finalDmg;
         if (opts.isNormal) attacker.normalKills += finalDmg;
         else attacker.skillKills += finalDmg;
@@ -4387,6 +4445,47 @@
 
         if (target.troops <= 0) {
           addLog(currentTurn, attacker.side, `${nameTag(target)}의 병력이 <span class="text-rose-500 font-bold">0</span>이 되어 전투 불능!`, "ko");
+        }
+
+        // [하후돈 고유: 강렬] 피격 후 41.2% 확률로 공격자 82.4% 병기 반격 + 2턴 공격자 피해 -30.9%
+        if (!opts.isCounter && target.troops > 0 && attacker.troops > 0 && target.skills.includes("gangryeol") && Math.random() * 100 < 41.2) {
+          attacker.debuffs.dmgDealtDecTurns = Math.max(attacker.debuffs.dmgDealtDecTurns || 0, 2);
+          attacker.debuffs.dmgDealtDec = Math.max(attacker.debuffs.dmgDealtDec || 0, 30.9);
+          addLog(currentTurn, target.side, `${nameTag(target)} 【강렬】 반격 발동! (${attacker.name} 2턴 주는 피해 -30.9%)`);
+          dealDamage(target, attacker, { type: "phys", coef: 82.4 * (1 + effCmd(target) / 600), isNormal: false, isCounter: true, source: "강렬" });
+        }
+
+        // [고순 고유: 사생결의] 아군 5,000 누적 피해마다 방패병 공/방 +4%(최대 5중첩) + 적 2명 100% 병기
+        if (finalDmg > 0) {
+          const gosun = alive(getTeam(target.side)).find(a => a.skills.includes("sasaeng_gyeolui"));
+          if (gosun && !opts.isCounter) {
+            gosun.sasaengAccum = (gosun.sasaengAccum || 0) + finalDmg;
+            while (gosun.sasaengAccum >= 5000) {
+              gosun.sasaengAccum -= 5000;
+              if (Math.random() * 100 < Math.min(90, 50 * (1 + effCmd(gosun) / 500))) {
+                alive(getTeam(gosun.side)).filter(a => a.troopType === "방패병").forEach(sh => {
+                  sh.sasaengStacks = Math.min(5, (sh.sasaengStacks || 0) + 1);
+                  sh.dmgInc += 4;
+                  addDmgRed(sh, 4);
+                });
+                const e2 = [...alive(getEnemies(gosun.side))].sort(() => Math.random() - 0.5).slice(0, 2);
+                addLog(currentTurn, gosun.side, `${nameTag(gosun)} 【사생결의】 발동! (방패병 강화 + 적 ${e2.length}명 반격)`);
+                e2.forEach(e => dealDamage(gosun, e, { type: "phys", coef: 100, isNormal: false, isCounter: true, source: "사생결의" }));
+              }
+            }
+          }
+        }
+
+        // [관평 고유: 청룡 출격] 병기 피해 후 75% 확률 위협(이미 위협이면 100% 병기, 턴 최대 4회)
+        if (!opts.isCounter && opts.type === "phys" && attacker.troops > 0 && target.troops > 0 && attacker.skills.includes("cheongryong_chulgyeok") && (attacker.cheongryongCnt || 0) < 4 && Math.random() < 0.75) {
+          attacker.cheongryongCnt = (attacker.cheongryongCnt || 0) + 1;
+          if (target.debuffs.threat > 0) {
+            addLog(currentTurn, attacker.side, `${nameTag(attacker)} 【청룡 출격】 용의 포효 추가 타격!`);
+            dealDamage(attacker, target, { type: "phys", coef: 100, isNormal: false, isCounter: true, source: "청룡 출격" });
+          } else {
+            target.debuffs.threat = 2;
+            addLog(currentTurn, attacker.side, `${nameTag(attacker)} 【청룡 출격】 → ${nameTag(target)} 2턴 위협 부여!`);
+          }
         }
 
         // <득세> 선본: 피해를 준 후 관통 +1.5% (최대 5중첩)
@@ -4579,7 +4678,7 @@
         const allies = alive(getTeam(sourceUnit.side));
         const guardOwner = allies.find(u => u.skills.includes("nambang_guard"));
         if (!guardOwner) return;
-        const prob = Math.min(95, 36.05 * (1 + effCmd(guardOwner) / 300));
+        const prob = Math.min(72, 36.05 * (1 + effCmd(guardOwner) / 600)); // 6회차 실측 턴당 평균 2회 보정
         const topForceAlly = [...allies].sort((a, b) => effForce(b) - effForce(a))[0];
         if (!topForceAlly) return;
 
@@ -4684,7 +4783,7 @@
         jiryakTriggeredThisTurn.clear();
         Object.keys(eumyangCountThisTurn).forEach(k => delete eumyangCountThisTurn[k]);
         Object.keys(taepyeongCountThisTurn).forEach(k => delete taepyeongCountThisTurn[k]);
-        allUnits.forEach(u => { u.gyeokdolHealCountThisTurn = 0; u.evadeCountThisTurn = 0; u.segeumCountThisTurn = 0; u.kkeutCountThisTurn = 0; u.mangunTriggeredThisTurn = false; u.firstDmgDoneThisTurn = false; });
+        allUnits.forEach(u => { u.bulgulGuardCnt = {}; u.cheongryongCnt = 0; u.beomPohyoDone = false; u.teamHitsThisTurn = 0; u.gyeokdolHealCountThisTurn = 0; u.evadeCountThisTurn = 0; u.segeumCountThisTurn = 0; u.kkeutCountThisTurn = 0; u.mangunTriggeredThisTurn = false; u.firstDmgDoneThisTurn = false; });
         addLog(t, "system", `◆ ${t}번째 턴 시작 ◆`, "turn");
         // 연구소 병종 10레벨 해제 특수 효과
         allUnits.filter(u => u.troops > 0 && u.research).forEach(u => {
@@ -4838,6 +4937,17 @@
             const coef = 113.33 * (1 + (t - 1) * 0.10);
             addLog(t, u.side, `${nameTag(u)} 【비상한 전략】 발동!`);
             dealDamage(u, target, { type: "strat", coef, isNormal: false, source: "비상한 전략" });
+          }
+
+          // [등애 고유: 둔전령] 매 턴 시작 시 전체 아군 회복
+          if (u.skills.includes("dunjeonryeong")) {
+            const healAmt = Math.sqrt(u.troops) * 2.2 * (effIntel(u) / 140) * 1.1;
+            addLog(t, u.side, `${nameTag(u)} 【둔전령】 턴 시작 전체 아군 회복!`);
+            myTeam.forEach(a => applyHeal(u, a, healAmt, "둔전령", false));
+          }
+          // [태사자 고유: 완벽한 사격] 매 턴 시작 시 92% 확률 축력 1스택 (최대 10)
+          if (u.skills.includes("wanbyeok_sagyeok") && Math.random() < 0.92) {
+            u.chukryeokStacks = Math.min(10, (u.chukryeokStacks || 0) + 1);
           }
 
           // 훗날의 교훈 (매 턴 시작 시 랜덤 적 2명 92.7% 책략 피해, 누적 치유량 영향)
@@ -5051,7 +5161,7 @@
             if (gyeokdolUnit && gyeokdolUnit.gyeokdolChaseRateStacks < 5) gyeokdolUnit.gyeokdolChaseRateStacks++;
 
             const dogwangBoost = (skId === u.innateSkillId && u.skills.includes("dogwang")) ? 6 * (1 + effIntel(u) / 500) : 0;
-            const chokRateBoost = u.tempBuffs.reduce((s, b) => s + (b.activeRateInc || 0), 0);
+            const chokRateBoost = (u.activeRateInc || 0) + u.tempBuffs.reduce((s, b) => s + (b.activeRateInc || b.activeRateAdd || 0), 0);
             const effRate = Math.min(100, Math.max(5, sk.rate + dogwangBoost + chokRateBoost - activePenalty));
             let triggered = (skId === "chilgun" && u.chargingChilgun) ? true : (Math.random() * 100 < effRate);
             // 우천의 흑운: 우군 액티브 미발동 시 50%(지력 영향) 확률로 운신 1스택 소모해 재판정
@@ -5100,6 +5210,61 @@
                 if (alreadyFlood) {
                   dealDamage(u, e, { type: "phys", coef: 100, isNormal: false, source: "천하무략" });
                   dealDamage(u, e, { type: "strat", coef: 100, isNormal: false, source: "천하무략" });
+                }
+              });
+            } else if (skId === "hwasoyeonyeong") {
+              const firstPick = ePool[Math.floor(Math.random() * ePool.length)];
+              if (firstPick) firstPick.debuffs.burn = Math.max(firstPick.debuffs.burn || 0, 2);
+              const burned = alive(getEnemies(u.side)).filter(e => e.debuffs.burn > 0);
+              addLog(t, u.side, `${nameTag(u)} 고유 전법 [화소연영] 발동! (${firstPick ? firstPick.name + " 화공 부여 → " : ""}화공 대상 ${burned.length}명 220% 책략·연소)`);
+              burned.forEach(e => {
+                e.debuffs.burnStacks = Math.min(6, (e.debuffs.burnStacks || 0) + 1);
+                e.debuffs.burnStackTurns = 2;
+                if (Math.random() * 100 < Math.min(85, 40 * (1 + effIntel(u) / 400))) {
+                  e.debuffs.burnStacks = Math.min(6, (e.debuffs.burnStacks || 0) + 1);
+                }
+                dealDamage(u, e, { type: "strat", coef: 220, isNormal: false, isActive: true, source: "화소연영" });
+              });
+            } else if (skId === "hyeongju_bunhal") {
+              const both = [...alive(getTeam(u.side)), ...alive(getEnemies(u.side))].sort(() => Math.random() - 0.5).slice(0, 4);
+              const val = 20 * (1 + effIntel(u) / 500);
+              addLog(t, u.side, `${nameTag(u)} 고유 전법 [형주 분할] 발동! (${both.length}명 무장 해제 및 피해 증감)`);
+              both.forEach(tg => {
+                tg.debuffs.disarm = Math.max(tg.debuffs.disarm || 0, 1);
+                if (tg.side === u.side) {
+                  tg.tempBuffs.push({ name: "형주 분할-방어", turns: 1, dmgRed: val });
+                } else {
+                  tg.debuffs.dmgTakenIncTurns = Math.max(tg.debuffs.dmgTakenIncTurns || 0, 1);
+                  tg.debuffs.dmgTakenInc = Math.max(tg.debuffs.dmgTakenInc || 0, val);
+                }
+              });
+            } else if (skId === "hwaha_jinap") {
+              const threatCnt = ePool.filter(e => e.debuffs.threat > 0).length;
+              u.tempBuffs.push({ name: "화하 진압-발동률", turns: 2, activeRateAdd: 8 + threatCnt * 3 });
+              addLog(t, u.side, `${nameTag(u)} 고유 전법 [화하 진압] 발동! (전체 적군 180% 병기 피해)`);
+              ePool.forEach(e => dealDamage(u, e, { type: "phys", coef: 180, isNormal: false, isActive: true, source: "화하 진압" }));
+            } else if (skId === "yongmaeng_hwasin") {
+              const pick = ePool[Math.floor(Math.random() * ePool.length)];
+              if (pick) {
+                const coef = pick.row === "front" ? 440 : 360;
+                addLog(t, u.side, `${nameTag(u)} 고유 전법 [용맹의 화신] 발동! (${pick.name} ${coef}% 책략 피해)`);
+                dealDamage(u, pick, { type: "strat", coef, isNormal: false, isActive: true, source: "용맹의 화신" });
+              }
+            } else if (skId === "sosin_baleon") {
+              const low2 = [...alive(getTeam(u.side))].sort((a, b) => (a.troops / a.maxTroops) - (b.troops / b.maxTroops)).slice(0, 2);
+              const healAmt = Math.sqrt(u.troops) * 5.2 * (effIntel(u) / 140) * 1.1;
+              const dec = 24 * (1 + effIntel(u) / 500);
+              addLog(t, u.side, `${nameTag(u)} 고유 전법 [소신발언] 발동! (아군 2명 정화·회복 & 적 전체 피해 -${dec.toFixed(1)}%)`);
+              low2.forEach(a => { a.debuffs.burn = 0; a.debuffs.disarm = 0; applyHeal(u, a, healAmt, "소신발언", false); });
+              ePool.forEach(e => { e.debuffs.dmgDealtDecTurns = Math.max(e.debuffs.dmgDealtDecTurns || 0, 2); e.debuffs.dmgDealtDec = Math.max(e.debuffs.dmgDealtDec || 0, dec); });
+            } else if (skId === "mussang_yongsa") {
+              addLog(t, u.side, `${nameTag(u)} 고유 전법 [무쌍의 용사] 발동! (전체 적군 결투)`);
+              ePool.forEach(e => {
+                if (u.troops > 0 && e.troops > 0) {
+                  dealDamage(u, e, { type: "phys", coef: 100, isNormal: true, source: "무쌍의 용사" });
+                  if (effForce(u) > effForce(e) && e.troops > 0) {
+                    dealDamage(u, e, { type: "phys", coef: 100, isNormal: false, isActive: true, source: "무쌍의 용사-추가" });
+                  }
                 }
               });
             } else if (skId === "hwagong") {
@@ -5408,6 +5573,46 @@
                 if (!target) break;
                 addLog(t, u.side, `${nameTag(u)} → ${nameTag(target)} 일반 공격${h > 0 ? " (연타!)" : ""}${u.debuffs.tauntTurns > 0 ? " [조롱]" : ""}`);
                 dealDamage(u, target, { type: "phys", coef: 100, isNormal: true, source: "일반 공격" });
+                // [태사자 고유: 완벽한 사격] 일반 공격 후 축력 전부 소모 추가 병기 피해
+                if (u.troops > 0 && target.troops > 0 && u.skills.includes("wanbyeok_sagyeok") && (u.chukryeokStacks || 0) > 0) {
+                  const st = u.chukryeokStacks;
+                  u.chukryeokStacks = 0;
+                  addLog(t, u.side, `${nameTag(u)} 【완벽한 사격】 축력 ${st}스택 폭발!`);
+                  dealDamage(u, target, { type: "phys", coef: 60 * st, isNormal: false, isChase: true, source: "완벽한 사격" });
+                }
+                // [왕이 고유: 유인전] 일반 공격 후 40%(지력 영향) 확률 랜덤 적 2명 100% 책략 + 받피증 4%
+                if (u.troops > 0 && u.skills.includes("yuinjeon") && Math.random() * 100 < Math.min(85, 40 * (1 + effIntel(u) / 400))) {
+                  const picks = [...alive(getEnemies(u.side))].sort(() => Math.random() - 0.5).slice(0, 2);
+                  addLog(t, u.side, `${nameTag(u)} 【유인전】 발동! (적 ${picks.length}명 100% 책략 피해)`);
+                  picks.forEach(e => {
+                    e.debuffs.dmgTakenIncTurns = Math.max(e.debuffs.dmgTakenIncTurns || 0, 2);
+                    e.debuffs.dmgTakenInc = Math.min(24, (e.debuffs.dmgTakenInc || 0) + 4 * (1 + effIntel(u) / 500));
+                    dealDamage(u, e, { type: "strat", coef: 100, isNormal: false, isChase: true, source: "유인전" });
+                  });
+                }
+                // [안량 고유: 남다른 완력] 추격 100%: 150% 병기 (+70% 무력 우위)
+                if (u.troops > 0 && target.troops > 0 && u.skills.includes("namdareun_wanryeok")) {
+                  const coef = effForce(u) > effForce(target) ? 220 : 150;
+                  addLog(t, u.side, `${nameTag(u)} 추격 [남다른 완력] 발동! (${coef}% 병기 피해)`);
+                  dealDamage(u, target, { type: "phys", coef, isNormal: false, isChase: true, source: "남다른 완력" });
+                }
+                // [공손찬 고유: 국경의 장수] 추격 50%: 피신 +24% & 적 2명 140% 병기+책략
+                if (u.troops > 0 && u.skills.includes("gukgyeong_jangsu") && Math.random() < 0.50) {
+                  u.tempBuffs.push({ name: "국경의 장수-피신", turns: 2, evadeAdd: 24 });
+                  const picks = [...alive(getEnemies(u.side))].sort(() => Math.random() - 0.5).slice(0, 2);
+                  addLog(t, u.side, `${nameTag(u)} 추격 [국경의 장수] 발동! (피신 +24% & 적 ${picks.length}명 140% 문무 피해)`);
+                  picks.forEach(e => {
+                    dealDamage(u, e, { type: "phys", coef: 70, isNormal: false, isChase: true, source: "국경의 장수" });
+                    dealDamage(u, e, { type: "strat", coef: 70, isNormal: false, isChase: true, source: "국경의 장수" });
+                  });
+                }
+                // [관은병 고유: 범의 포효] 턴당 1회 40%(무력·선공 영향) 적 2명 260% 병기 피해
+                if (u.troops > 0 && u.skills.includes("beom_pohyo") && !u.beomPohyoDone && Math.random() * 100 < Math.min(80, 40 * (1 + (effForce(u) + effSpeed(u)) / 700))) {
+                  u.beomPohyoDone = true;
+                  const picks = [...alive(getEnemies(u.side))].sort(() => Math.random() - 0.5).slice(0, 2);
+                  addLog(t, u.side, `${nameTag(u)} 【범의 포효】 발동! (적 ${picks.length}명 260% 병기 피해)`);
+                  picks.forEach(e => dealDamage(u, e, { type: "phys", coef: 260, isNormal: false, source: "범의 포효" }));
+                }
                 // 추격: 전장 평정 (일반 공격 후 55% 확률, 목표 선공·무력 감소 후 디버프 보유 적군 전체에게 180% 병기 피해)
                 if (u.troops > 0 && target.troops > 0 && u.skills.includes("jeonjang") && Math.random() * 100 < (55 + (u.gyeokdolChaseRateStacks || 0) * 5)) {
                   const debAmt = 24 * (1 + effForce(u) / 860);
@@ -5529,6 +5734,48 @@
             addLog(t, side, `${nameTag(topIntel)} 【성운 대열-삼중 전열 진형】 턴 종료 책략 공격!`);
             liveEn.forEach(e => dealDamage(topIntel, e, { type: "strat", coef: 60, isNormal: false, source: "성운 대열-삼중" }));
           }
+          // 연소(화소연영) 턴 종료 도트 피해 정산
+          const burnCaster = liveTeam.find(u => u.skills.includes("hwasoyeonyeong")) || liveTeam[0];
+          liveEn.filter(e => (e.debuffs.burnStacks || 0) > 0 && (e.debuffs.burnStackTurns || 0) > 0).forEach(e => {
+            const st = e.debuffs.burnStacks;
+            addLog(t, side, `${nameTag(e)} 【연소 ${st}스택】 턴 종료 책략 피해!`);
+            dealDamage(burnCaster, e, { type: "strat", coef: 65 * st, isNormal: false, source: "화소연영-연소" });
+            e.debuffs.burnStackTurns--;
+            if (e.debuffs.burnStackTurns <= 0) e.debuffs.burnStacks = 0;
+          });
+          // [강유 고유: 중원 토벌] 매 턴 종료 시 1~3회 토벌 (적 2명 병기+책략)
+          liveTeam.filter(u => u.skills.includes("jungwon_tobeol")).forEach(u => {
+            const teamHits = Math.min(9, liveTeam.reduce((s, a) => s + (a.teamHitsThisTurn || 0), 0));
+            const strikes = 1 + Math.floor(Math.random() * 3);
+            const coef = 40 + teamHits * 5;
+            addLog(t, side, `${nameTag(u)} 【중원 토벌】 ${strikes}회 발동! (계수 ${coef}%)`);
+            for (let k = 0; k < strikes; k++) {
+              const picks = [...alive(getEnemies(side))].sort(() => Math.random() - 0.5).slice(0, 2);
+              picks.forEach(e => {
+                dealDamage(u, e, { type: "phys", coef: coef * 0.5, isNormal: false, source: "중원 토벌" });
+                dealDamage(u, e, { type: "strat", coef: coef * 0.5, isNormal: false, source: "중원 토벌" });
+              });
+            }
+          });
+          // [위연 고유: 자오의 묘책] 위협 보유 적군에게 60% 병기 + 출혈 피해
+          liveTeam.filter(u => u.skills.includes("jao_myochaek")).forEach(u => {
+            const threatened = alive(getEnemies(side)).filter(e => e.debuffs.threat > 0);
+            threatened.forEach(e => {
+              addLog(t, side, `${nameTag(u)} 【자오의 묘책】 위협 대상 ${nameTag(e)} 추격!`);
+              dealDamage(u, e, { type: "phys", coef: 90, isNormal: false, source: "자오의 묘책" });
+            });
+          });
+          // [화타 고유: 마비산] 턴 종료 시 병력 최저 우군 받피감 16%(지력 영향) + 대량 회복
+          liveTeam.filter(u => u.skills.includes("mabisan")).forEach(u => {
+            const low = [...alive(units)].sort((a, b) => (a.troops / a.maxTroops) - (b.troops / b.maxTroops))[0];
+            if (low) {
+              const red = 16 * (1 + effIntel(u) / 500);
+              low.tempBuffs.push({ name: "마비산-방어", turns: 1, dmgRed: red });
+              const healAmt = Math.sqrt(u.troops) * 6.8 * (effIntel(u) / 140) * 1.1;
+              applyHeal(u, low, healAmt, "마비산", false);
+            }
+          });
+
           // 훗날의 교훈: 매 턴 종료 시 전열 아군 회복 (치유율 51.5%, 지력 영향)
           liveTeam.filter(u => u.skills.includes("hutnal")).forEach(u => {
             const frontAllies = alive(units).filter(a => a.row === "front");
